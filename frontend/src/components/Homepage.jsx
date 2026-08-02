@@ -313,7 +313,7 @@ export default function Homepage() {
       </section>
 
       <section className="mt-6 grid scroll-mt-24 gap-5 lg:grid-cols-3">
-        <article className="animate-floatIn rounded-3xl bg-gradient-to-br from-[#12324a] via-[#174763] to-[#202737] p-6 text-white shadow-card lg:col-span-2">
+        <article className="animate-floatIn min-w-0 overflow-hidden rounded-3xl bg-gradient-to-br from-[#12324a] via-[#174763] to-[#202737] p-4 text-white shadow-card sm:p-6 lg:col-span-2">
           <div className="mb-3 flex items-end justify-between gap-3">
             <div>
               <span className="inline-flex rounded-full border border-[#f4e9d7]/35 bg-[#f4e9d7]/12 px-3 py-1 text-[11px] font-semibold tracking-wide text-[#fff7eb] backdrop-blur-sm">
@@ -429,7 +429,7 @@ export default function Homepage() {
           </div>
         </article>
 
-        <aside id="about" className="scroll-mt-24 rounded-3xl border border-ink/10 bg-white p-5 shadow-card dark:border-white/20 dark:bg-white/10">
+        <aside id="about" className="scroll-mt-24 min-w-0 rounded-3xl border border-ink/10 bg-white p-4 shadow-card dark:border-white/20 dark:bg-white/10 sm:p-5">
           <div className="rounded-2xl bg-gradient-to-r from-[#0f4d73] to-[#246c8f] p-4 text-white">
             <p className="text-xs font-semibold tracking-[0.18em] text-white/80">NOTICE BOARD & EVENTS</p>
             <h3 className="mt-1 text-xl font-bold">প্রেস ক্লাবের নোটিশ ও ইভেন্ট</h3>
@@ -446,7 +446,7 @@ export default function Homepage() {
                   </span>
                 </div>
                 <p className="mt-1 text-xs font-medium text-ink/65 dark:text-white/70">প্রকাশ: {notice.date}</p>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   <button className="inline-flex items-center gap-1 rounded-lg bg-river px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110">
                     <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                       <path d="M12 3v12" />
