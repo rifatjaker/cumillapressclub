@@ -1,0 +1,1292 @@
+import { useEffect, useRef, useState } from 'react'
+import { breakingNews, categories, committee, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, notices, upcomingEvents } from '../data/content'
+
+export default function Homepage() {
+  const categoryRef = useRef(null)
+  const mediaSliderRef = useRef(null)
+  const [canScrollPrev, setCanScrollPrev] = useState(false)
+  const [canScrollNext, setCanScrollNext] = useState(false)
+  const [canMediaScrollPrev, setCanMediaScrollPrev] = useState(false)
+  const [canMediaScrollNext, setCanMediaScrollNext] = useState(false)
+  const [selectedProfile, setSelectedProfile] = useState(null)
+  const [selectedProfileGroup, setSelectedProfileGroup] = useState('')
+  const [activeVideo, setActiveVideo] = useState(null)
+  const [activePhoto, setActivePhoto] = useState(null)
+  const [memberQuery, setMemberQuery] = useState('')
+  const [membershipForm, setMembershipForm] = useState({
+    type: 'new',
+    name: '',
+    phone: '',
+    media: '',
+    nidLast4: ''
+  })
+  const [membershipSubmitted, setMembershipSubmitted] = useState(false)
+  const [verificationInput, setVerificationInput] = useState('')
+  const [verificationMember, setVerificationMember] = useState(null)
+  const [pressReleaseForm, setPressReleaseForm] = useState({
+    sender: '',
+    organization: '',
+    email: '',
+    title: '',
+    details: ''
+  })
+  const [pressReleaseSubmitted, setPressReleaseSubmitted] = useState(false)
+  const [archiveQuery, setArchiveQuery] = useState('')
+  const visibleHeroHighlights = heroHighlights.slice(0, 3)
+  const hasMoreHeroHighlights = heroHighlights.length > 3
+  const priorityLeadershipRoles = new Set(['সভাপতি', 'সাধারণ সম্পাদক'])
+  const visibleLeadershipProfiles = leadershipProfiles.filter((leader) => priorityLeadershipRoles.has(leader.role))
+  const hasMoreLeadershipProfiles = leadershipProfiles.some((leader) => !priorityLeadershipRoles.has(leader.role))
+  const visibleCommittee = committee.slice(0, 4)
+  const hasMoreCommittee = committee.length > 4
+  const memberDirectory = [
+    ...leadershipProfiles.map((person, index) => ({
+      id: `CPC-L-${String(index + 1).padStart(3, '0')}`,
+      name: person.name,
+      role: person.role,
+      media: person.media || 'কুমিল্লা প্রেস ক্লাব',
+      phone: person.phone,
+      group: 'leadership',
+      profile: person
+    })),
+    ...committee.map((person, index) => ({
+      id: `CPC-M-${String(index + 1).padStart(3, '0')}`,
+      name: person.name,
+      role: person.role,
+      media: person.media,
+      phone: person.phone,
+      group: 'committee',
+      profile: person
+    }))
+  ]
+  const normalizedMemberQuery = memberQuery.trim().toLowerCase()
+  const shouldSearchMembers = normalizedMemberQuery.length >= 2
+  const archiveItems = [
+    {
+      year: '১৯৬৮',
+      title: 'কুমিল্লা বার্তা: স্বাধীনতা-পূর্ব বিশেষ সংখ্যা',
+      type: 'সংবাদপত্র',
+      url: '#'
+    },
+    {
+      year: '১৯৮৪',
+      title: 'প্রেস ক্লাব স্মারক ম্যাগাজিন',
+      type: 'ম্যাগাজিন',
+      url: '#'
+    },
+    {
+      year: '১৯৯৬',
+      title: 'জেলা উন্নয়ন বিশেষ প্রতিবেদন',
+      type: 'প্রকাশনা',
+      url: '#'
+    },
+    {
+      year: '২০০৮',
+      title: 'সাংবাদিকতা নৈতিকতা কর্মশালা নথি',
+      type: 'আর্কাইভ ডকুমেন্ট',
+      url: '#'
+    }
+  ]
+  const filteredMembers = shouldSearchMembers
+    ? memberDirectory.filter((member) => [member.name, member.id, member.role, member.media]
+      .filter(Boolean)
+      .some((field) => field.toLowerCase().includes(normalizedMemberQuery)))
+    : []
+  const visibleFilteredMembers = filteredMembers.slice(0, 20)
+  const normalizedArchiveQuery = archiveQuery.trim().toLowerCase()
+  const filteredArchiveItems = archiveItems.filter((item) => {
+    if (!normalizedArchiveQuery) {
+      return true
+    }
+
+    return [item.year, item.title, item.type].some((field) => field.toLowerCase().includes(normalizedArchiveQuery))
+  })
+
+  const openProfileModal = (profile, group) => {
+    setSelectedProfile(profile)
+    setSelectedProfileGroup(group)
+  }
+
+  const closeProfileModal = () => {
+    setSelectedProfile(null)
+    setSelectedProfileGroup('')
+  }
+
+  const getYoutubeEmbedUrl = (url) => {
+    if (!url) {
+      return ''
+    }
+
+    try {
+      const parsed = new URL(url)
+      let videoId = ''
+
+      if (parsed.hostname.includes('youtu.be')) {
+        videoId = parsed.pathname.replace('/', '')
+      } else {
+        videoId = parsed.searchParams.get('v') || ''
+      }
+
+      if (!videoId) {
+        return ''
+      }
+
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`
+    } catch {
+      return ''
+    }
+  }
+
+  const openVideoModal = (item) => {
+    if (!item?.youtubeUrl) {
+      return
+    }
+
+    setActiveVideo(item)
+  }
+
+  const closeVideoModal = () => {
+    setActiveVideo(null)
+  }
+
+  const openPhotoModal = (item) => {
+    if (!item?.imageUrl) {
+      return
+    }
+
+    setActivePhoto(item)
+  }
+
+  const closePhotoModal = () => {
+    setActivePhoto(null)
+  }
+
+  const handleMembershipSubmit = (event) => {
+    event.preventDefault()
+    setMembershipSubmitted(true)
+  }
+
+  const handleIdVerification = (event) => {
+    event.preventDefault()
+    const query = verificationInput.trim().toLowerCase()
+    const foundMember = memberDirectory.find((member) => member.id.toLowerCase() === query)
+    setVerificationMember(foundMember || null)
+  }
+
+  const handlePressReleaseSubmit = (event) => {
+    event.preventDefault()
+    setPressReleaseSubmitted(true)
+  }
+
+  useEffect(() => {
+    const el = categoryRef.current
+    if (!el) {
+      return
+    }
+
+    const updateScrollState = () => {
+      const max = el.scrollWidth - el.clientWidth
+      setCanScrollPrev(el.scrollLeft > 2)
+      setCanScrollNext(max > 2 && el.scrollLeft < max - 2)
+    }
+
+    updateScrollState()
+    el.addEventListener('scroll', updateScrollState, { passive: true })
+    window.addEventListener('resize', updateScrollState)
+
+    return () => {
+      el.removeEventListener('scroll', updateScrollState)
+      window.removeEventListener('resize', updateScrollState)
+    }
+  }, [])
+
+  useEffect(() => {
+    const el = mediaSliderRef.current
+    if (!el) {
+      return
+    }
+
+    const updateMediaScrollState = () => {
+      const max = el.scrollWidth - el.clientWidth
+      setCanMediaScrollPrev(el.scrollLeft > 2)
+      setCanMediaScrollNext(max > 2 && el.scrollLeft < max - 2)
+    }
+
+    updateMediaScrollState()
+    el.addEventListener('scroll', updateMediaScrollState, { passive: true })
+    window.addEventListener('resize', updateMediaScrollState)
+
+    return () => {
+      el.removeEventListener('scroll', updateMediaScrollState)
+      window.removeEventListener('resize', updateMediaScrollState)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!selectedProfile) {
+      return
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        closeProfileModal()
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [selectedProfile])
+
+  useEffect(() => {
+    if (!activeVideo) {
+      return
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        closeVideoModal()
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [activeVideo])
+
+  useEffect(() => {
+    if (!activePhoto) {
+      return
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        closePhotoModal()
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [activePhoto])
+
+  const scrollCategories = (direction) => {
+    const el = categoryRef.current
+    if (!el) {
+      return
+    }
+
+    const step = Math.max(180, Math.floor(el.clientWidth * 0.65))
+    el.scrollBy({ left: direction === 'next' ? step : -step, behavior: 'smooth' })
+  }
+
+  const scrollMediaSlider = (direction) => {
+    const el = mediaSliderRef.current
+    if (!el) {
+      return
+    }
+
+    const step = Math.max(260, Math.floor(el.clientWidth * 0.75))
+    el.scrollBy({ left: direction === 'next' ? step : -step, behavior: 'smooth' })
+  }
+
+  const breakingCards = (suffix) =>
+    breakingNews.map((headline, index) => (
+      <a key={`${suffix}-${index}`} href="#news-notices" className="breaking-mini-item">
+        <span className="breaking-mini-item__title">{headline}</span>
+      </a>
+    ))
+
+  return (
+    <main id="home" className="mx-auto w-[min(1200px,94vw)] py-6">
+      <section id="news-notices" className="scroll-mt-24 overflow-hidden rounded-2xl bg-ink text-white">
+        <div className="flex items-center">
+          <div className="shrink-0 whitespace-nowrap bg-coral px-4 py-3 text-sm font-bold tracking-wide">ব্রেকিং নিউজ</div>
+          <div className="breaking-mini group relative w-full px-2 py-2" aria-label="ট্রেন্ডিং ও সর্বশেষ সংবাদ">
+            <div className="breaking-mini__viewport">
+              <div className="breaking-mini__track breaking-mini__track--ticker">
+                <div className="breaking-mini__marquee-set">{breakingCards('a')}</div>
+                <div className="breaking-mini__marquee-set" aria-hidden>
+                  {breakingCards('b')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-6 grid scroll-mt-24 gap-5 lg:grid-cols-3">
+        <article className="animate-floatIn rounded-3xl bg-gradient-to-br from-[#12324a] via-[#174763] to-[#202737] p-6 text-white shadow-card lg:col-span-2">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <span className="inline-flex rounded-full border border-[#f4e9d7]/35 bg-[#f4e9d7]/12 px-3 py-1 text-[11px] font-semibold tracking-wide text-[#fff7eb] backdrop-blur-sm">
+                হাইলাইট ডেস্ক
+              </span>
+              <h2 className="mt-2 font-display text-2xl font-bold leading-tight text-white md:text-[1.9rem]">
+                ফিচার্ড ও ট্রেন্ডিং সংবাদ
+              </h2>
+            </div>
+            <span className="hidden rounded-full border border-[#ffd9a6]/45 bg-[#ffd9a6]/12 px-2.5 py-1 text-xs font-semibold text-[#fff2dc] sm:inline-flex">
+              লাইভ আপডেট
+            </span>
+          </div>
+
+          <div className="mt-2 grid gap-4 xl:grid-cols-[1.45fr_1fr]">
+            <div className="rounded-2xl border border-[#f4e9d7]/28 bg-[#f4e9d7]/10 p-4 backdrop-blur-sm">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="rounded-full bg-[#f4e9d7]/16 px-2.5 py-1 font-semibold text-[#fff7ec]">কুমিল্লা</span>
+                <span className="rounded-full bg-[#f4e9d7]/16 px-2.5 py-1 font-semibold text-[#fff7ec]">সারাদেশ</span>
+              </div>
+              <h2 className="mt-3 font-display text-3xl font-bold leading-tight">{featuredNews[0].title}</h2>
+              <p className="mt-3 text-[#fff2df]">{featuredNews[0].summary}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[#fff0dd]">
+                <span className="rounded-full border border-[#f4e9d7]/35 px-2.5 py-1">প্রধান শিরোনাম</span>
+                <span className="rounded-full border border-[#f4e9d7]/35 px-2.5 py-1">সর্বশেষ আপডেট</span>
+                <span className="rounded-full border border-[#f4e9d7]/35 px-2.5 py-1">বিশেষ প্রতিবেদন</span>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button className="rounded-xl bg-coral px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ff4e33]">বিস্তারিত পড়ুন</button>
+                <button className="rounded-xl border border-[#f4e9d7]/35 bg-[#f4e9d7]/10 px-4 py-2 text-sm font-semibold text-[#fff7ec] transition hover:bg-[#f4e9d7]/20">সব শিরোনাম</button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#f4e9d7]/28 bg-[#f4e9d7]/10 p-4 backdrop-blur-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm font-bold text-[#ffebc8]">প্রধান খবরের হাইলাইট</p>
+                <span className="text-xs text-[#f6e6d0]">লাইভ</span>
+              </div>
+              <div className="space-y-2.5">
+                {visibleHeroHighlights.map((item) => (
+                  <a
+                    key={item.title}
+                    href="#news-notices"
+                    className="block rounded-xl border border-[#f4e9d7]/20 bg-[#f4e9d7]/10 p-3 transition hover:border-[#f4e9d7]/45 hover:bg-[#f4e9d7]/18"
+                  >
+                    <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold">
+                      <span className={item.tone === 'local' ? 'text-[#ffd69f]' : 'text-[#bfe9ff]'}>{item.scope}</span>
+                      <span className="text-[#f6e6d0]/70">•</span>
+                      <span className="text-[#f6e6d0]">{item.time}</span>
+                    </div>
+                    <p className="text-sm font-semibold leading-snug text-[#fff6ea]">{item.title}</p>
+                  </a>
+                ))}
+              </div>
+              {hasMoreHeroHighlights && (
+                <a
+                  href="#news-notices"
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#ffe5c4] underline decoration-[#ffd7a8]/70 underline-offset-2 hover:text-white"
+                >
+                  আরও দেখুন
+                  <span aria-hidden="true">→</span>
+                </a>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-[#f4e9d7]/30 bg-[#f4e9d7]/10 p-4">
+            <p className="text-xs font-semibold tracking-wide text-mint">ট্রেন্ডিং এখন</p>
+            <h3 className="mt-1 text-lg font-bold leading-snug">{featuredNews[1].title}</h3>
+            <p className="mt-1 text-sm text-[#f8ead6]">{featuredNews[1].summary}</p>
+          </div>
+
+          <div className="topic-strip mt-8" aria-label="আলোচিত বিষয়">
+            <span className="topic-strip__label">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 4L8 20M16 4l-2 16M4 9h16M3 15h16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              আলোচিত বিষয়
+            </span>
+            <div className="topic-strip__rail">
+              <button
+                type="button"
+                className="topic-strip__nav"
+                onClick={() => scrollCategories('prev')}
+                disabled={!canScrollPrev}
+                aria-label="আগের বিষয়গুলো"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <div ref={categoryRef} className="topic-strip__scroller no-scrollbar">
+                <div className="topic-strip__track">
+                  {categories.map((c) => (
+                    <a key={c} href="#news-notices" className="topic-strip__pill">
+                      {c}
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="topic-strip__nav"
+                onClick={() => scrollCategories('next')}
+                disabled={!canScrollNext}
+                aria-label="পরের বিষয়গুলো"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <aside id="about" className="scroll-mt-24 rounded-3xl border border-ink/10 bg-white p-5 shadow-card dark:border-white/20 dark:bg-white/10">
+          <div className="rounded-2xl bg-gradient-to-r from-[#0f4d73] to-[#246c8f] p-4 text-white">
+            <p className="text-xs font-semibold tracking-[0.18em] text-white/80">NOTICE BOARD & EVENTS</p>
+            <h3 className="mt-1 text-xl font-bold">প্রেস ক্লাবের নোটিশ ও ইভেন্ট</h3>
+            <p className="mt-1 text-sm text-white/85">নতুন দিকনির্দেশনা, প্রেস রিলিজ ও অফিসিয়াল নোটিশ</p>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {notices.map((notice, index) => (
+              <div key={notice.title} className="rounded-xl border border-ink/10 bg-ink/5 p-3 dark:border-white/20 dark:bg-white/5">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-semibold leading-snug text-ink dark:text-white">{notice.title}</p>
+                  <span className="rounded-full bg-river/15 px-2 py-0.5 text-[11px] font-semibold text-river dark:bg-white/15 dark:text-white/90">
+                    #{index + 1}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs font-medium text-ink/65 dark:text-white/70">প্রকাশ: {notice.date}</p>
+                <div className="mt-2 flex gap-2">
+                  <button className="inline-flex items-center gap-1 rounded-lg bg-river px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110">
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path d="M12 3v12" />
+                      <path d="M7 10l5 5 5-5" />
+                      <path d="M5 21h14" />
+                    </svg>
+                    PDF ডাউনলোড
+                  </button>
+                  <button className="rounded-lg border border-ink/20 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15">
+                    বিস্তারিত
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-coral/35 bg-gradient-to-br from-[#fff2e8] to-[#ffe6d3] p-4 dark:border-coral/40 dark:from-[#2a1f24] dark:to-[#3a2624]">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-ink dark:text-white">আগামী ইভেন্ট কাউন্টডাউন</p>
+              <span className="rounded-full bg-coral/20 px-2.5 py-0.5 text-[11px] font-semibold text-coral dark:bg-coral/30 dark:text-orange-100">LIVE</span>
+            </div>
+
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="rounded-xl bg-white/90 p-2 text-center dark:bg-white/10">
+                <p className="text-lg font-bold text-coral">০৫</p>
+                <p className="text-[11px] font-semibold text-ink/70 dark:text-white/75">দিন</p>
+              </div>
+              <div className="rounded-xl bg-white/90 p-2 text-center dark:bg-white/10">
+                <p className="text-lg font-bold text-coral">১২</p>
+                <p className="text-[11px] font-semibold text-ink/70 dark:text-white/75">ঘন্টা</p>
+              </div>
+              <div className="rounded-xl bg-white/90 p-2 text-center dark:bg-white/10">
+                <p className="text-lg font-bold text-coral">৩০</p>
+                <p className="text-[11px] font-semibold text-ink/70 dark:text-white/75">মিনিট</p>
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {upcomingEvents.map((eventItem) => (
+                <div key={eventItem.title} className="rounded-xl border border-ink/10 bg-white/80 p-2.5 dark:border-white/20 dark:bg-white/5">
+                  <p className="text-sm font-semibold text-ink dark:text-white">{eventItem.title}</p>
+                  <p className="mt-0.5 text-xs text-ink/70 dark:text-white/70">{eventItem.date} • {eventItem.time}</p>
+                  <p className="text-xs text-ink/70 dark:text-white/70">স্থান: {eventItem.venue}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section className="mt-8 grid scroll-mt-24 gap-5 lg:grid-cols-2">
+        <div className="rounded-3xl border border-ink/10 bg-white p-5 shadow-card dark:border-white/20 dark:bg-white/10">
+          <h3 className="flex items-center gap-2 text-xl font-bold text-ink dark:text-white">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-river/15 text-river dark:bg-white/15 dark:text-white">
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.2" />
+                <path d="M4.5 20c0-4.1 3.4-6.8 7.5-6.8s7.5 2.7 7.5 6.8" />
+              </svg>
+            </span>
+            নেতৃত্বের প্রোফাইল
+          </h3>
+          <div className="mt-4 space-y-4">
+            {visibleLeadershipProfiles.map((leader) => (
+              <article
+                key={leader.name}
+                className="cursor-pointer rounded-2xl border border-ink/10 bg-gradient-to-r from-white to-[#eef7ff] p-4 transition hover:border-river/35 hover:shadow-md dark:border-white/20 dark:from-white/5 dark:to-white/10 dark:hover:border-sky-300/45"
+                role="button"
+                tabIndex={0}
+                onClick={() => openProfileModal(leader, 'leadership')}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    openProfileModal(leader, 'leadership')
+                  }
+                }}
+                aria-label={`${leader.name} এর প্রোফাইল দেখুন`}
+              >
+                <div className="flex gap-3">
+                  <div className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-river to-coral text-sm font-bold text-white">
+                    {leader.photoTag}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold tracking-wide text-river dark:text-sky-200">{leader.role}</p>
+                    <h4 className="text-lg font-bold text-ink dark:text-white">{leader.name}</h4>
+                    <p className="mt-1 text-sm text-ink/75 dark:text-white/80">{leader.message}</p>
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+                  <a onClick={(event) => event.stopPropagation()} href="#contact" className="inline-flex items-center gap-2 rounded-lg border border-ink/15 bg-white px-2.5 py-1.5 text-ink/80 transition hover:bg-ink/5 dark:border-white/20 dark:bg-white/5 dark:text-white/85 dark:hover:bg-white/10">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-sky-700 dark:bg-sky-300/20 dark:text-sky-200">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M4 7l8 6 8-6" /></svg>
+                    </span>
+                    <span className="min-w-0 truncate"><strong>Mail:</strong> {leader.email}</span>
+                  </a>
+                  <a onClick={(event) => event.stopPropagation()} href="#contact" className="inline-flex items-center gap-2 rounded-lg border border-ink/15 bg-white px-2.5 py-1.5 text-ink/80 transition hover:bg-ink/5 dark:border-white/20 dark:bg-white/5 dark:text-white/85 dark:hover:bg-white/10">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-300/20 dark:text-emerald-200">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24c1.1.36 2.3.56 3.6.56a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.5 21 3 13.5 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.2.2 2.4.56 3.6a1 1 0 0 1-.25 1z" /></svg>
+                    </span>
+                    <span className="min-w-0 truncate"><strong>Phone:</strong> {leader.phone}</span>
+                  </a>
+                  <a onClick={(event) => event.stopPropagation()} href="#contact" className="inline-flex items-center gap-2 rounded-lg border border-ink/15 bg-white px-2.5 py-1.5 text-ink/80 transition hover:bg-ink/5 dark:border-white/20 dark:bg-white/5 dark:text-white/85 dark:hover:bg-white/10">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-300/20 dark:text-blue-200">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden="true"><path d="M14 8h2V5h-2c-2.2 0-4 1.8-4 4v2H8v3h2v5h3v-5h2.2l.8-3H13V9c0-.6.4-1 1-1z" /></svg>
+                    </span>
+                    <span className="min-w-0 truncate"><strong>Facebook:</strong> {leader.social}</span>
+                  </a>
+                </div>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    openProfileModal(leader, 'leadership')
+                  }}
+                  className="mt-3 inline-flex items-center gap-1 rounded-lg bg-river px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110 dark:bg-sky-600"
+                >
+                  প্রোফাইল দেখুন
+                  <span aria-hidden="true">→</span>
+                </button>
+              </article>
+            ))}
+            {hasMoreLeadershipProfiles && (
+              <a
+                href="#committee"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-river underline decoration-river/60 underline-offset-2 transition hover:text-coral dark:text-sky-200 dark:decoration-sky-200/60"
+              >
+                আরও দেখুন
+                <span aria-hidden="true">→</span>
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div id="committee" className="scroll-mt-24 rounded-3xl border border-ink/10 bg-white p-5 shadow-card dark:border-white/20 dark:bg-white/10">
+          <h3 className="flex items-center gap-2 text-xl font-bold text-ink dark:text-white">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-coral/15 text-coral dark:bg-coral/25 dark:text-orange-100">
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                <circle cx="8" cy="8" r="2.5" />
+                <circle cx="16" cy="8" r="2.5" />
+                <path d="M4.5 19c0-2.8 2.2-4.8 4.9-4.8 2.5 0 4.6 1.7 4.9 4" />
+                <path d="M11.5 19c.3-2.3 2.4-4 4.8-4 2.6 0 4.7 1.9 4.7 4" />
+              </svg>
+            </span>
+            বর্তমান নির্বাহী কমিটি
+          </h3>
+          <p className="mt-1 text-sm text-ink/65 dark:text-white/70">গ্রিড ভিউতে কমিটির সদস্যদের দ্রুত তথ্য</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {visibleCommittee.map((person) => (
+              <article
+                key={person.name}
+                className="flex h-full min-h-[132px] cursor-pointer flex-col rounded-xl border border-ink/10 bg-gradient-to-r from-white to-[#fff3eb] p-3 transition hover:border-coral/35 hover:shadow-md dark:border-white/20 dark:from-white/5 dark:to-white/10 dark:hover:border-orange-200/45"
+                role="button"
+                tabIndex={0}
+                onClick={() => openProfileModal(person, 'committee')}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    openProfileModal(person, 'committee')
+                  }
+                }}
+                aria-label={`${person.name} এর প্রোফাইল দেখুন`}
+              >
+                <p className="font-semibold text-ink dark:text-white">{person.name}</p>
+                <p className="text-sm font-medium text-river dark:text-sky-200">{person.role}</p>
+                <p className="mt-1 flex-1 rounded-md bg-ink/5 px-2 py-1 text-xs font-semibold text-[#111827] dark:bg-white/10 dark:text-[#f8fafc]">{person.media}</p>
+                <p className="mt-2 inline-flex w-fit rounded-full bg-river/10 px-2 py-0.5 text-xs font-semibold text-river dark:bg-white/15 dark:text-white/90">{person.phone}</p>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    openProfileModal(person, 'committee')
+                  }}
+                  className="mt-2 inline-flex w-fit items-center gap-1 rounded-lg border border-river/25 bg-river/10 px-2.5 py-1 text-xs font-semibold text-river transition hover:bg-river/20 dark:border-sky-200/30 dark:bg-sky-200/10 dark:text-sky-100"
+                >
+                  প্রোফাইল দেখুন
+                  <span aria-hidden="true">→</span>
+                </button>
+              </article>
+            ))}
+          </div>
+          {hasMoreCommittee && (
+            <a
+              href="#committee"
+              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-river underline decoration-river/60 underline-offset-2 transition hover:text-coral dark:text-sky-200 dark:decoration-sky-200/60"
+            >
+              আরও দেখুন
+              <span aria-hidden="true">→</span>
+            </a>
+          )}
+        </div>
+      </section>
+
+      <section
+        id="media-gallery"
+        className="relative mt-8 scroll-mt-24 overflow-hidden rounded-3xl border border-ink/10 bg-gradient-to-br from-[#fff7ef] via-[#eef7ff] to-[#e7fff3] p-5 shadow-card dark:border-white/20 dark:from-[#0f1d2b] dark:via-[#11283c] dark:to-[#143226]"
+      >
+        <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-coral/20 blur-3xl dark:bg-coral/25" aria-hidden="true" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-44 w-44 rounded-full bg-river/20 blur-3xl dark:bg-river/25" aria-hidden="true" />
+
+        <div className="relative flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h3 className="flex items-center gap-2 text-xl font-bold text-ink dark:text-white">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-coral/20 text-coral dark:bg-coral/25 dark:text-orange-100">
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2.5" />
+                  <circle cx="8.2" cy="10" r="1.8" />
+                  <path d="M12 14l2.8-3 4.2 5" />
+                </svg>
+              </span>
+              মিডিয়া গ্যালারি
+            </h3>
+            <p className="mt-1 text-sm font-medium text-ink/75 dark:text-white/75">
+              প্রেস ক্লাবের অনুষ্ঠান, প্রেস কনফারেন্স এবং কুমিল্লার ইতিহাস-ঐতিহ্যের আকর্ষণীয় ছবি ও ভিডিও স্লাইডার।
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => scrollMediaSlider('prev')}
+              disabled={!canMediaScrollPrev}
+              aria-label="আগের মিডিয়া"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-river/35 bg-white/70 text-river transition hover:bg-river/10 disabled:cursor-not-allowed disabled:opacity-45 dark:border-sky-200/40 dark:bg-white/10 dark:text-sky-100 dark:hover:bg-sky-200/15"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollMediaSlider('next')}
+              disabled={!canMediaScrollNext}
+              aria-label="পরের মিডিয়া"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-river/35 bg-white/70 text-river transition hover:bg-river/10 disabled:cursor-not-allowed disabled:opacity-45 dark:border-sky-200/40 dark:bg-white/10 dark:text-sky-100 dark:hover:bg-sky-200/15"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="relative mt-5">
+          <div ref={mediaSliderRef} className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth pb-1 pr-1">
+          {galleryItems.map((item, index) => (
+            <article
+              key={item.title}
+              className={`group min-w-[250px] flex-none overflow-hidden rounded-2xl border border-white/60 bg-white/70 p-3 shadow-sm backdrop-blur-sm transition duration-300 sm:min-w-[280px] lg:min-w-[285px] dark:border-white/20 dark:bg-white/10 ${(item.type.toLowerCase() === 'video' || item.type.toLowerCase() === 'photo') ? 'cursor-pointer hover:-translate-y-1 hover:shadow-xl' : ''}`}
+              role={(item.type.toLowerCase() === 'video' || item.type.toLowerCase() === 'photo') ? 'button' : undefined}
+              tabIndex={(item.type.toLowerCase() === 'video' || item.type.toLowerCase() === 'photo') ? 0 : undefined}
+              onClick={
+                item.type.toLowerCase() === 'video'
+                  ? () => openVideoModal(item)
+                  : item.type.toLowerCase() === 'photo'
+                    ? () => openPhotoModal(item)
+                    : undefined
+              }
+              onKeyDown={(item.type.toLowerCase() === 'video' || item.type.toLowerCase() === 'photo')
+                ? (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    if (item.type.toLowerCase() === 'video') {
+                      openVideoModal(item)
+                    } else {
+                      openPhotoModal(item)
+                    }
+                  }
+                }
+                : undefined}
+              aria-label={item.type.toLowerCase() === 'video' ? `${item.title} ভিডিও চালান` : item.type.toLowerCase() === 'photo' ? `${item.title} বড় করে দেখুন` : undefined}
+            >
+              <div className="relative h-28 overflow-hidden rounded-xl bg-gradient-to-br from-river/35 via-coral/25 to-mint/35 dark:from-river/45 dark:via-coral/35 dark:to-emerald-300/25">
+                {item.imageUrl && (
+                  <img
+                    src={item.imageUrl}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                )}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.45),transparent_55%)]" aria-hidden="true" />
+                <span className="absolute left-2 top-2 rounded-full bg-black/65 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                  {item.type}
+                </span>
+                <span className="absolute right-2 top-2 rounded-full bg-coral px-2 py-0.5 text-[10px] font-bold text-white">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <span className="absolute inset-0 m-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-river shadow-md transition group-hover:scale-110 dark:bg-white dark:text-coral">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+                    <path d="M8 6.5v11l9-5.5-9-5.5z" />
+                  </svg>
+                </span>
+                {item.type.toLowerCase() === 'video' && (
+                  <span className="absolute bottom-2 right-2 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold text-white">
+                    ক্লিক করে প্লে
+                  </span>
+                )}
+                {item.type.toLowerCase() === 'photo' && (
+                  <span className="absolute bottom-2 right-2 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold text-white">
+                    ক্লিক করে জুম
+                  </span>
+                )}
+              </div>
+              <p className="mt-3 line-clamp-2 font-semibold text-ink dark:text-white">{item.title}</p>
+              <p className="mt-1 text-xs font-medium text-ink/70 dark:text-white/70">{item.type} • কুমিল্লা প্রেস ক্লাব</p>
+            </article>
+          ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="members" className="mt-8 grid scroll-mt-24 gap-5 lg:grid-cols-5">
+        <div className="rounded-3xl border border-ink/10 bg-gradient-to-br from-[#fff7ec] via-[#f3f9ff] to-[#eefef5] p-5 shadow-card dark:border-white/20 dark:from-[#111d2a] dark:via-[#112a3a] dark:to-[#123526] lg:col-span-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="flex items-center gap-2 text-xl font-bold text-ink dark:text-white">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-river/15 text-river dark:bg-sky-200/20 dark:text-sky-100">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                    <circle cx="8" cy="8" r="3" />
+                    <path d="M2.5 19c0-3.3 2.7-5.4 5.5-5.4S13.5 15.7 13.5 19" />
+                    <rect x="14" y="5" width="7" height="4" rx="1" />
+                    <path d="M14 13h7M14 17h5" />
+                  </svg>
+                </span>
+                সদস্য যাচাইকরণ ও ডিরেক্টরি
+              </h3>
+              <p className="mt-1 text-sm text-ink/75 dark:text-white/75">
+                নাম বা আইডি দিয়ে নিবন্ধিত সাংবাদিকদের প্রোফাইল, মিডিয়া হাউজের নাম এবং পদবী সার্চ করুন।
+              </p>
+            </div>
+            <span className="rounded-full border border-river/30 bg-river/10 px-3 py-1 text-xs font-semibold text-river dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100">
+              মোট সদস্য: {memberDirectory.length}
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+            <input
+              value={memberQuery}
+              onChange={(event) => setMemberQuery(event.target.value)}
+              className="rounded-xl border border-ink/20 bg-white/80 px-4 py-3 outline-none ring-river/40 placeholder:text-ink/50 focus:ring dark:border-white/30 dark:bg-white/10 dark:text-white dark:placeholder:text-white/55"
+              placeholder="নাম, সদস্য আইডি, পদবী বা মিডিয়া হাউজ লিখুন"
+            />
+            <button
+              className="rounded-xl bg-coral px-5 py-3 font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!shouldSearchMembers}
+            >
+              সার্চ
+            </button>
+            <button
+              type="button"
+              onClick={() => setMemberQuery('')}
+              className="rounded-xl border border-ink/20 bg-white/85 px-4 py-3 text-sm font-semibold text-ink transition hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+            >
+              রিসেট
+            </button>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-ink/10 bg-white/80 p-3 dark:border-white/20 dark:bg-white/10">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold tracking-wide text-ink/70 dark:text-white/75">SEARCH RESULT</p>
+              <p className="text-xs font-semibold text-river dark:text-sky-200">ম্যাচ: {filteredMembers.length}</p>
+            </div>
+
+            <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+              {!shouldSearchMembers ? (
+                <p className="rounded-xl border border-dashed border-ink/20 bg-ink/5 px-3 py-6 text-center text-sm text-ink/65 dark:border-white/25 dark:bg-white/5 dark:text-white/70">
+                  সার্চ শুরু করতে কমপক্ষে ২টি অক্ষর লিখুন।
+                </p>
+              ) : visibleFilteredMembers.length > 0 ? (
+                visibleFilteredMembers.map((member) => (
+                  <article
+                    key={member.id}
+                    className="cursor-pointer rounded-xl border border-ink/10 bg-white p-3 transition hover:border-river/35 hover:shadow-sm dark:border-white/15 dark:bg-white/5 dark:hover:border-sky-300/40"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openProfileModal(member.profile, member.group)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        openProfileModal(member.profile, member.group)
+                      }
+                    }}
+                    aria-label={`${member.name} এর প্রোফাইল দেখুন`}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <h4 className="font-semibold text-ink dark:text-white">{member.name}</h4>
+                        <p className="text-sm text-river dark:text-sky-200">{member.role}</p>
+                      </div>
+                      <span className="rounded-full bg-coral/15 px-2.5 py-0.5 text-xs font-semibold text-coral dark:bg-coral/25 dark:text-orange-100">{member.id}</span>
+                    </div>
+                    <p className="mt-1 text-sm text-ink/75 dark:text-white/80">মিডিয়া: {member.media}</p>
+                    <p className="mt-1 text-xs text-ink/65 dark:text-white/70">ফোন: {member.phone}</p>
+                  </article>
+                ))
+              ) : (
+                <p className="rounded-xl border border-dashed border-ink/20 bg-ink/5 px-3 py-6 text-center text-sm text-ink/65 dark:border-white/25 dark:bg-white/5 dark:text-white/70">
+                  কোনো সদস্য পাওয়া যায়নি। অন্য নাম/আইডি/মিডিয়া দিয়ে চেষ্টা করুন।
+                </p>
+              )}
+            </div>
+            {shouldSearchMembers && filteredMembers.length > visibleFilteredMembers.length && (
+              <p className="mt-2 text-xs text-ink/65 dark:text-white/70">
+                {visibleFilteredMembers.length} জন দেখানো হচ্ছে, আরও ফলাফল পেতে সার্চ আরও নির্দিষ্ট করুন।
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-ink/10 bg-gradient-to-br from-[#132432] via-[#1b3347] to-[#15323a] p-5 text-white shadow-card dark:border-white/20 lg:col-span-2">
+          <h3 className="flex items-center gap-2 text-xl font-bold">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-mint">
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                <path d="M4 8h16M4 12h10M4 16h8" />
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+              </svg>
+            </span>
+            বিশেষ আকর্ষণীয় ফিচারসমূহ
+          </h3>
+
+          <div className="mt-4 space-y-4">
+            <article className="rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm">
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-mint">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-mint/20 text-[11px] font-bold text-mint">1</span>
+                অনলাইন সদস্যপদ ফর্ম ও ই-আইডি কার্ড
+              </h4>
+
+              <form className="mt-2 space-y-2" onSubmit={handleMembershipSubmit}>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <select
+                    value={membershipForm.type}
+                    onChange={(event) => setMembershipForm((prev) => ({ ...prev, type: event.target.value }))}
+                    className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white outline-none"
+                  >
+                    <option value="new" className="text-ink">নতুন সদস্যপদ</option>
+                    <option value="renew" className="text-ink">নবায়ন সদস্যপদ</option>
+                  </select>
+                  <input
+                    value={membershipForm.name}
+                    onChange={(event) => setMembershipForm((prev) => ({ ...prev, name: event.target.value }))}
+                    placeholder="পূর্ণ নাম"
+                    className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                  />
+                  <input
+                    value={membershipForm.phone}
+                    onChange={(event) => setMembershipForm((prev) => ({ ...prev, phone: event.target.value }))}
+                    placeholder="মোবাইল নম্বর"
+                    className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                  />
+                  <input
+                    value={membershipForm.media}
+                    onChange={(event) => setMembershipForm((prev) => ({ ...prev, media: event.target.value }))}
+                    placeholder="মিডিয়া হাউজ"
+                    className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                  />
+                </div>
+                <input
+                  value={membershipForm.nidLast4}
+                  onChange={(event) => setMembershipForm((prev) => ({ ...prev, nidLast4: event.target.value }))}
+                  placeholder="NID শেষ ৪ ডিজিট"
+                  className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                />
+                <button type="submit" className="w-full rounded-lg bg-coral px-3 py-2 text-sm font-semibold text-white transition hover:brightness-110">
+                  আবেদন জমা দিন
+                </button>
+              </form>
+
+              {membershipSubmitted && (
+                <p className="mt-2 rounded-lg border border-emerald-300/35 bg-emerald-300/15 px-3 py-2 text-xs text-emerald-100">
+                  আবেদন গ্রহণ করা হয়েছে। যাচাই শেষে আপনার স্মার্ট ই-আইডি কার্ড ইমেইলে পাঠানো হবে।
+                </p>
+              )}
+
+              <form className="mt-3 space-y-2" onSubmit={handleIdVerification}>
+                <p className="text-xs font-semibold text-white/80">QR ই-কার্ড ভেরিফিকেশন (Member ID দিয়ে)</p>
+                <div className="flex gap-2">
+                  <input
+                    value={verificationInput}
+                    onChange={(event) => setVerificationInput(event.target.value)}
+                    placeholder="উদাহরণ: CPC-M-001"
+                    className="min-w-0 flex-1 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                  />
+                  <button type="submit" className="rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15">
+                    Verify
+                  </button>
+                </div>
+              </form>
+
+              {verificationMember && (
+                <div className="mt-3 flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 p-2.5">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=74x74&data=${encodeURIComponent(verificationMember.id)}`}
+                    alt={`${verificationMember.id} QR`}
+                    className="h-[74px] w-[74px] rounded-md bg-white p-1"
+                    loading="lazy"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-white">{verificationMember.name}</p>
+                    <p className="text-xs text-white/80">{verificationMember.role} • {verificationMember.id}</p>
+                    <p className="text-xs text-mint">Status: Verified Member</p>
+                  </div>
+                </div>
+              )}
+            </article>
+
+            <article className="rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm">
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-mint">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-mint/20 text-[11px] font-bold text-mint">2</span>
+                ই-লাইব্রেরি ও আর্কাইভ
+              </h4>
+              <input
+                value={archiveQuery}
+                onChange={(event) => setArchiveQuery(event.target.value)}
+                placeholder="বছর, শিরোনাম বা টাইপ দিয়ে সার্চ করুন"
+                className="mt-2 w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+              />
+              <div className="mt-2 max-h-40 space-y-2 overflow-y-auto pr-1">
+                {filteredArchiveItems.map((item) => (
+                  <div key={`${item.year}-${item.title}`} className="rounded-lg border border-white/15 bg-black/20 px-3 py-2">
+                    <p className="text-xs text-mint">{item.year} • {item.type}</p>
+                    <a
+                      href={item.url}
+                      className="mt-0.5 block text-sm font-medium text-white transition hover:text-mint"
+                    >
+                      {item.title}
+                    </a>
+                    <a
+                      href={item.url}
+                      className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-sky-200 underline decoration-sky-200/60 underline-offset-2 hover:text-mint"
+                    >
+                      আর্কাইভ দেখুন
+                      <span aria-hidden="true">→</span>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm">
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-mint">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-mint/20 text-[11px] font-bold text-mint">3</span>
+                প্রেস রিলিজ সাবমিশন
+              </h4>
+              <form className="mt-2 space-y-2" onSubmit={handlePressReleaseSubmit}>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <input
+                    value={pressReleaseForm.sender}
+                    onChange={(event) => setPressReleaseForm((prev) => ({ ...prev, sender: event.target.value }))}
+                    placeholder="প্রেরকের নাম"
+                    className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                  />
+                  <input
+                    value={pressReleaseForm.organization}
+                    onChange={(event) => setPressReleaseForm((prev) => ({ ...prev, organization: event.target.value }))}
+                    placeholder="প্রতিষ্ঠান"
+                    className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                  />
+                </div>
+                <input
+                  type="email"
+                  value={pressReleaseForm.email}
+                  onChange={(event) => setPressReleaseForm((prev) => ({ ...prev, email: event.target.value }))}
+                  placeholder="ইমেইল"
+                  className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                />
+                <input
+                  value={pressReleaseForm.title}
+                  onChange={(event) => setPressReleaseForm((prev) => ({ ...prev, title: event.target.value }))}
+                  placeholder="প্রেস রিলিজ শিরোনাম"
+                  className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                />
+                <textarea
+                  value={pressReleaseForm.details}
+                  onChange={(event) => setPressReleaseForm((prev) => ({ ...prev, details: event.target.value }))}
+                  placeholder="বিস্তারিত বার্তা লিখুন"
+                  rows={3}
+                  className="w-full resize-none rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                />
+                <button type="submit" className="w-full rounded-lg bg-river px-3 py-2 text-sm font-semibold text-white transition hover:brightness-110">
+                  বার্তা পাঠান
+                </button>
+              </form>
+              {pressReleaseSubmitted && (
+                <p className="mt-2 rounded-lg border border-sky-300/35 bg-sky-300/15 px-3 py-2 text-xs text-sky-100">
+                  প্রেস রিলিজ সফলভাবে সাবমিট হয়েছে। রিভিউ শেষে আপনাকে নোটিফাই করা হবে।
+                </p>
+              )}
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <footer
+        id="contact"
+        className="relative left-1/2 mt-10 w-[100dvw] max-w-[100dvw] -translate-x-1/2 scroll-mt-24 overflow-hidden border-y border-white/10 bg-gradient-to-br from-[#091722] via-[#0e2536] to-[#173844] px-3 py-8 text-white shadow-card sm:px-4"
+      >
+        <div className="pointer-events-none absolute -left-20 -top-20 h-52 w-52 rounded-full bg-coral/20 blur-3xl" aria-hidden="true" />
+        <div className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-mint/10 blur-3xl" aria-hidden="true" />
+
+        <div className="relative mx-auto w-full max-w-[1200px]">
+          <div className="grid gap-5 lg:grid-cols-12">
+          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm md:col-span-6 lg:col-span-4">
+            <h4 className="font-display text-2xl font-bold text-white">কুমিল্লা প্রেস ক্লাব</h4>
+            <p className="mt-2 text-sm leading-relaxed text-white/82">
+              স্বাধীন, দায়িত্বশীল ও আধুনিক সাংবাদিকতার চর্চায় কুমিল্লা প্রেস ক্লাব দীর্ঘদিন ধরে আস্থা, পেশাদারিত্ব ও জনস্বার্থভিত্তিক সংবাদকর্মের একটি শক্তিশালী প্ল্যাটফর্ম।
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-white/72">
+              সদস্য উন্নয়ন, তথ্যভিত্তিক প্রতিবেদন এবং গণমাধ্যমের নৈতিক মানদণ্ড রক্ষায় আমরা প্রতিশ্রুতিবদ্ধ।
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm md:col-span-3 lg:col-span-3">
+            <h5 className="text-base font-semibold text-mint">গুরুত্বপূর্ণ লিংক</h5>
+            <ul className="mt-3 space-y-2 text-sm text-white/85">
+              {importantLinks.map((link) => (
+                <li key={link.label}>
+                  <a href={link.url} className="inline-flex items-center gap-2 transition hover:text-mint">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-coral" />
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm md:col-span-3 lg:col-span-5">
+            <h5 className="text-base font-semibold text-mint">যোগাযোগ ও মানচিত্র</h5>
+            <div className="mt-3 space-y-1.5 text-sm text-white/85">
+              <p>ঠিকানা: কুমিল্লা প্রেস ক্লাব, কুমিল্লা শহর, বাংলাদেশ</p>
+              <p>ফোন: +8801XXXXXXXXX</p>
+              <p>ইমেইল: info@cumillapressclub.org</p>
+            </div>
+            <div className="mt-3 overflow-hidden rounded-xl border border-white/20">
+              <iframe
+                title="Cumilla Press Club Map"
+                src="https://www.google.com/maps?q=Comilla%20Bangladesh&output=embed"
+                className="h-36 w-full"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          </div>
+          </div>
+
+          <div className="relative mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm">
+            <div>
+              <h5 className="text-base font-semibold text-mint">সোশ্যাল মিডিয়া</h5>
+              <p className="mt-1 text-xs text-white/70">আপডেট পেতে আমাদের অফিসিয়াল চ্যানেলগুলোতে যুক্ত থাকুন</p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm">
+              <a href="https://www.facebook.com" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 transition hover:bg-white/20">
+                <span aria-hidden="true">f</span>
+                Facebook
+              </a>
+              <a href="https://www.youtube.com" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 transition hover:bg-white/20">
+                <span aria-hidden="true">▶</span>
+                YouTube
+              </a>
+              <a href="https://x.com" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 transition hover:bg-white/20">
+                <span aria-hidden="true">X</span>
+                X (Twitter)
+              </a>
+            </div>
+          </div>
+
+          <div className="relative mt-7 border-t border-white/20 pt-4 text-sm text-white/75 md:flex md:items-center md:justify-between">
+            <p>© ২০২৬ কুমিল্লা প্রেস ক্লাব। সর্বস্বত্ব সংরক্ষিত।</p>
+            <p className="mt-2 md:mt-0">
+              Developed by{' '}
+              <a
+                href="https://a2technologiesbd.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-mint underline decoration-mint/60 underline-offset-2 hover:text-white"
+              >
+                A2 Technologies
+              </a>
+            </p>
+          </div>
+        </div>
+      </footer>
+
+      {selectedProfile && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/65 p-4 backdrop-blur-[1px]"
+          onClick={closeProfileModal}
+          role="presentation"
+        >
+          <article
+            className="w-full max-w-xl rounded-3xl border border-ink/15 bg-white p-5 shadow-2xl dark:border-white/20 dark:bg-[#0f1722]"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="প্রোফাইল ডিটেইলস"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-river to-coral text-base font-bold text-white">
+                  {selectedProfile.photoTag || selectedProfile.name.slice(0, 2)}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold tracking-wide text-river dark:text-sky-200">
+                    {selectedProfileGroup === 'leadership' ? 'নেতৃত্ব' : 'নির্বাহী কমিটি'}
+                  </p>
+                  <h4 className="text-xl font-bold text-ink dark:text-white">{selectedProfile.name}</h4>
+                  <p className="text-sm font-medium text-ink/75 dark:text-white/75">{selectedProfile.role}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeProfileModal}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-ink/20 text-ink/70 transition hover:bg-ink/5 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/10"
+                aria-label="প্রোফাইল বন্ধ করুন"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-2 rounded-2xl border border-ink/10 bg-ink/5 p-4 dark:border-white/15 dark:bg-white/5">
+              {selectedProfile.message ? (
+                <p className="text-sm leading-relaxed text-ink/85 dark:text-white/85">{selectedProfile.message}</p>
+              ) : (
+                <p className="text-sm leading-relaxed text-ink/75 dark:text-white/75">এই সদস্যের বিস্তারিত প্রোফাইল তথ্য শিগগিরই যুক্ত হবে।</p>
+              )}
+
+              {selectedProfile.media && (
+                <p className="text-sm text-ink/80 dark:text-white/80">
+                  <strong>মিডিয়া:</strong> {selectedProfile.media}
+                </p>
+              )}
+              {selectedProfile.email && (
+                <p className="text-sm text-ink/80 dark:text-white/80">
+                  <strong>ইমেইল:</strong> {selectedProfile.email}
+                </p>
+              )}
+              {selectedProfile.phone && (
+                <p className="text-sm text-ink/80 dark:text-white/80">
+                  <strong>ফোন:</strong> {selectedProfile.phone}
+                </p>
+              )}
+              {selectedProfile.social && (
+                <p className="text-sm text-ink/80 dark:text-white/80">
+                  <strong>সোশ্যাল:</strong> {selectedProfile.social}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={closeProfileModal}
+                className="rounded-xl bg-coral px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </article>
+        </div>
+      )}
+
+      {activeVideo && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4"
+          onClick={closeVideoModal}
+          role="presentation"
+        >
+          <article
+            className="w-full max-w-4xl rounded-2xl border border-white/20 bg-[#0b1220] p-3 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="ভিডিও প্লেয়ার"
+          >
+            <div className="mb-2 flex items-center justify-between gap-3 px-1 py-1">
+              <h4 className="line-clamp-1 text-sm font-semibold text-white sm:text-base">{activeVideo.title}</h4>
+              <button
+                type="button"
+                onClick={closeVideoModal}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/35 text-white/90 transition hover:bg-white/10"
+                aria-label="ভিডিও বন্ধ করুন"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-hidden rounded-xl bg-black">
+              <iframe
+                className="aspect-video w-full"
+                src={getYoutubeEmbedUrl(activeVideo.youtubeUrl)}
+                title={activeVideo.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+            <div className="mt-3 flex justify-end">
+              <a
+                href={activeVideo.youtubeUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg bg-coral px-3 py-2 text-xs font-semibold text-white transition hover:brightness-110"
+              >
+                YouTube এ খুলুন
+              </a>
+            </div>
+          </article>
+        </div>
+      )}
+
+      {activePhoto && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
+          onClick={closePhotoModal}
+          role="presentation"
+        >
+          <article
+            className="w-full max-w-5xl overflow-hidden rounded-2xl border border-white/20 bg-[#0b1220] p-3 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="ছবি জুম প্রিভিউ"
+          >
+            <div className="mb-2 flex items-center justify-between gap-3 px-1 py-1">
+              <h4 className="line-clamp-1 text-sm font-semibold text-white sm:text-base">{activePhoto.title}</h4>
+              <button
+                type="button"
+                onClick={closePhotoModal}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/35 text-white/90 transition hover:bg-white/10"
+                aria-label="ছবি বন্ধ করুন"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-hidden rounded-xl bg-black/60">
+              <img
+                src={activePhoto.imageUrl}
+                alt={activePhoto.title}
+                className="max-h-[78vh] w-full object-contain"
+              />
+            </div>
+          </article>
+        </div>
+      )}
+    </main>
+  )
+}

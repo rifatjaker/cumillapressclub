@@ -1,0 +1,8 @@
+{
+  "name": "cumillapressclub/raw-php-api",
+  "description": "Raw PHP 8 API with JWT auth",
+  "type": "project",
+  "require": {
+    "php": "^8.1"
+  }
+}
