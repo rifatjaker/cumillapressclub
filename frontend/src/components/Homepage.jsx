@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { breakingNews, categories, committee, departmentsOverview, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, notices, organizationSpotlight, programSliderImages, upcomingEvents } from '../data/content'
+import { breakingNews, categories, committee, deceasedMembers, departmentsOverview, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, notices, organizationSpotlight, programSliderImages, upcomingEvents } from '../data/content'
 
 export default function Homepage() {
   const categoryRef = useRef(null)
@@ -1165,6 +1165,37 @@ export default function Homepage() {
                 {visibleFilteredMembers.length} জন দেখানো হচ্ছে, আরও ফলাফল পেতে সার্চ আরও নির্দিষ্ট করুন।
               </p>
             )}
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-ink/10 bg-white/80 p-3 dark:border-white/20 dark:bg-white/10">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-sm font-bold text-ink dark:text-white">প্রয়াত সদস্য</p>
+              <p className="text-xs font-semibold text-ink/60 dark:text-white/70">ছবি সহ স্মরণ তালিকা</p>
+            </div>
+
+            <div className="space-y-2">
+              {deceasedMembers.map((member) => (
+                <article
+                  key={`${member.name}-${member.tenure}`}
+                  className="flex items-center gap-3 rounded-xl border border-ink/10 bg-white p-2.5 dark:border-white/15 dark:bg-white/5"
+                >
+                  <img
+                    src={member.photoUrl || memberPlaceholderImage}
+                    alt={`${member.name} ছবি`}
+                    className="h-14 w-12 shrink-0 rounded-md border border-ink/15 object-cover dark:border-white/20"
+                    onError={(event) => {
+                      event.currentTarget.src = memberPlaceholderImage
+                    }}
+                    loading="lazy"
+                  />
+                  <div className="min-w-0">
+                    <h4 className="truncate text-sm font-semibold text-ink dark:text-white">{member.name}</h4>
+                    <p className="text-xs text-river dark:text-sky-200">{member.role}</p>
+                    <p className="text-xs text-ink/65 dark:text-white/70">সময়কাল: {member.tenure}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
 

@@ -163,6 +163,27 @@ export const leadershipProfiles = [
   }
 ]
 
+export const deceasedMembers = [
+  {
+    name: 'আবদুল মোমেন',
+    role: 'সাবেক সভাপতি',
+    tenure: '১৯৯৮ - ২০০২',
+    photoUrl: 'https://images.unsplash.com/photo-1531384441138-2736e62e0919?auto=format&fit=crop&w=500&q=80'
+  },
+  {
+    name: 'মো. শহীদুল ইসলাম',
+    role: 'সাবেক সাধারণ সম্পাদক',
+    tenure: '২০০৭ - ২০১১',
+    photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80'
+  },
+  {
+    name: 'সালেহা খাতুন',
+    role: 'সিনিয়র সদস্য',
+    tenure: '১৯৯২ - ২০১৮',
+    photoUrl: 'https://images.unsplash.com/photo-1603415526960-f7e0328e4f8a?auto=format&fit=crop&w=500&q=80'
+  }
+]
+
 export const galleryItems = [
   {
     title: 'প্রেস কনফারেন্স',
