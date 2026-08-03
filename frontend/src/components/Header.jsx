@@ -90,6 +90,7 @@ function navIconTone(type) {
 
 export default function Header({ darkMode, onToggleTheme }) {
   const [isNavFixed, setIsNavFixed] = useState(false)
+  const [isLogoZoomOpen, setIsLogoZoomOpen] = useState(false)
   const siteLogo = `${import.meta.env.BASE_URL}logo.jpg`
   const now = useMemo(() => new Date(), [])
   const enDate = now.toLocaleDateString('en-GB', {
@@ -115,6 +116,21 @@ export default function Header({ darkMode, onToggleTheme }) {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    if (!isLogoZoomOpen) {
+      return
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsLogoZoomOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [isLogoZoomOpen])
 
   return (
     <header className="border-b border-ink/10 bg-white/90 dark:border-white/10 dark:bg-ink/85">
@@ -150,7 +166,8 @@ export default function Header({ darkMode, onToggleTheme }) {
             <img
               src={siteLogo}
               alt="Cumilla Press Club logo"
-              className="h-full w-full object-contain p-1.5"
+              className="h-full w-full cursor-zoom-in object-contain p-1.5"
+              onClick={() => setIsLogoZoomOpen(true)}
               loading="eager"
               decoding="async"
             />
@@ -191,6 +208,41 @@ export default function Header({ darkMode, onToggleTheme }) {
           </div>
         </nav>
       </div>
+
+      {isLogoZoomOpen && (
+        <div
+          className="fixed inset-0 z-[95] flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setIsLogoZoomOpen(false)}
+          role="presentation"
+        >
+          <article
+            className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/25 bg-[#0b1220] p-3 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="লোগো জুম প্রিভিউ"
+          >
+            <div className="mb-2 flex items-center justify-between gap-3 px-1 py-1">
+              <h4 className="line-clamp-1 text-sm font-semibold text-white sm:text-base">কুমিল্লা প্রেস ক্লাব লোগো</h4>
+              <button
+                type="button"
+                onClick={() => setIsLogoZoomOpen(false)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/35 text-white/90 transition hover:bg-white/10"
+                aria-label="লোগো প্রিভিউ বন্ধ করুন"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-hidden rounded-xl bg-black/60 p-3">
+              <img
+                src={siteLogo}
+                alt="Cumilla Press Club logo বড় প্রিভিউ"
+                className="mx-auto h-auto max-h-[70vh] w-full max-w-[320px] object-contain"
+              />
+            </div>
+          </article>
+        </div>
+      )}
     </header>
   )
 }
