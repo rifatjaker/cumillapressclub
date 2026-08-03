@@ -90,6 +90,7 @@ function navIconTone(type) {
 
 export default function Header({ darkMode, onToggleTheme }) {
   const [isNavFixed, setIsNavFixed] = useState(false)
+  const siteLogo = `${import.meta.env.BASE_URL}logo.jpg`
   const now = useMemo(() => new Date(), [])
   const enDate = now.toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -147,7 +148,7 @@ export default function Header({ darkMode, onToggleTheme }) {
         <div className="flex items-start gap-2.5">
           <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm dark:border-white/20 dark:bg-white/95" aria-label="কুমিল্লা প্রেস ক্লাব লোগো">
             <img
-              src="https://a2technologiesbd.com/favicon.png"
+              src={siteLogo}
               alt="Cumilla Press Club logo"
               className="h-full w-full object-contain p-1"
               loading="eager"
