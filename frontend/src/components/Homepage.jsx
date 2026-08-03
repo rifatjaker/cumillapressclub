@@ -41,6 +41,7 @@ export default function Homepage() {
   const hasMoreLeadershipProfiles = leadershipProfiles.some((leader) => !priorityLeadershipRoles.has(leader.role))
   const visibleCommittee = committee.slice(0, 4)
   const hasMoreCommittee = committee.length > 4
+  const siteLogo = `${import.meta.env.BASE_URL}logo.jpg`
   const memberPlaceholderImage = `${import.meta.env.BASE_URL}member-placeholder.png`
   const memberDirectory = [
     ...leadershipProfiles.map((person, index) => ({
@@ -1238,7 +1239,17 @@ export default function Homepage() {
         <div className="relative mx-auto w-full max-w-[1200px]">
           <div className="grid gap-5 lg:grid-cols-12">
           <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm md:col-span-6 lg:col-span-4">
-            <h4 className="font-display text-2xl font-bold text-white">কুমিল্লা প্রেস ক্লাব</h4>
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/25 bg-white/95 shadow-sm">
+                <img
+                  src={siteLogo}
+                  alt="Cumilla Press Club logo"
+                  className="h-full w-full object-contain p-1"
+                  loading="lazy"
+                />
+              </span>
+              <h4 className="font-display text-2xl font-bold text-white">কুমিল্লা প্রেস ক্লাব</h4>
+            </div>
             <p className="mt-2 text-sm leading-relaxed text-white/82">
               স্বাধীন, দায়িত্বশীল ও আধুনিক সাংবাদিকতার চর্চায় কুমিল্লা প্রেস ক্লাব দীর্ঘদিন ধরে আস্থা, পেশাদারিত্ব ও জনস্বার্থভিত্তিক সংবাদকর্মের একটি শক্তিশালী প্ল্যাটফর্ম।
             </p>
