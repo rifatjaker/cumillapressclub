@@ -10,6 +10,7 @@ export default function Homepage() {
   const [canMediaScrollNext, setCanMediaScrollNext] = useState(false)
   const [selectedProfile, setSelectedProfile] = useState(null)
   const [selectedProfileGroup, setSelectedProfileGroup] = useState('')
+  const [selectedDeceasedMember, setSelectedDeceasedMember] = useState(null)
   const [activeVideo, setActiveVideo] = useState(null)
   const [activePhoto, setActivePhoto] = useState(null)
   const [activeProgramSlide, setActiveProgramSlide] = useState(0)
@@ -118,6 +119,31 @@ export default function Homepage() {
     ? filteredMembers.slice(0, 20)
     : filteredMembers.slice(0, 10)
   const deceasedTotalPages = Math.max(1, Math.ceil(deceasedMembers.length / deceasedMembersPerPage))
+  const deceasedPageNumbers = Array.from({ length: deceasedTotalPages }, (_, index) => index + 1)
+  const deceasedCompactPageItems = (() => {
+    if (deceasedTotalPages <= 5) {
+      return deceasedPageNumbers
+    }
+
+    const items = [1]
+    const start = Math.max(2, deceasedPage - 1)
+    const end = Math.min(deceasedTotalPages - 1, deceasedPage + 1)
+
+    if (start > 2) {
+      items.push('start-ellipsis')
+    }
+
+    for (let page = start; page <= end; page += 1) {
+      items.push(page)
+    }
+
+    if (end < deceasedTotalPages - 1) {
+      items.push('end-ellipsis')
+    }
+
+    items.push(deceasedTotalPages)
+    return items
+  })()
   const visibleDeceasedMembers = deceasedMembers.slice(
     (deceasedPage - 1) * deceasedMembersPerPage,
     deceasedPage * deceasedMembersPerPage
@@ -139,6 +165,14 @@ export default function Homepage() {
   const closeProfileModal = () => {
     setSelectedProfile(null)
     setSelectedProfileGroup('')
+  }
+
+  const openDeceasedProfileModal = (member) => {
+    setSelectedDeceasedMember(member)
+  }
+
+  const closeDeceasedProfileModal = () => {
+    setSelectedDeceasedMember(null)
   }
 
   const getYoutubeEmbedUrl = (url) => {
@@ -1377,7 +1411,7 @@ export default function Homepage() {
                 </span>
                 প্রয়াত সদস্য
               </h3>
-              <p className="mt-1 text-sm text-ink/75 dark:text-white/75">ছবি সহ স্মরণ তালিকা। দ্রুত লোডের জন্য পেইজভিত্তিক প্রদর্শন করা হচ্ছে।</p>
+              <p className="mt-1 text-sm text-ink/75 dark:text-white/75">ছবি সহ স্মরণ তালিকা</p>
             </div>
             <span className="rounded-full border border-coral/30 bg-coral/10 px-3 py-1 text-xs font-semibold text-coral dark:border-orange-200/35 dark:bg-orange-200/10 dark:text-orange-100">
               মোট: {deceasedMembers.length}
@@ -1388,12 +1422,26 @@ export default function Homepage() {
             {visibleDeceasedMembers.map((member) => (
               <article
                 key={`${member.name}-${member.tenure}`}
-                className="flex items-center gap-3 rounded-xl border border-ink/10 bg-white p-3 dark:border-white/15 dark:bg-white/5"
+                className="flex cursor-pointer items-center gap-3 rounded-xl border border-ink/10 bg-white p-3 transition hover:border-coral/35 hover:shadow-sm dark:border-white/15 dark:bg-white/5 dark:hover:border-orange-200/40"
+                role="button"
+                tabIndex={0}
+                onClick={() => openDeceasedProfileModal(member)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    openDeceasedProfileModal(member)
+                  }
+                }}
+                aria-label={`${member.name} এর প্রোফাইল দেখুন`}
               >
                 <img
                   src={member.photoUrl || memberPlaceholderImage}
                   alt={`${member.name} ছবি`}
-                  className="h-16 w-14 shrink-0 rounded-md border border-ink/15 object-cover dark:border-white/20"
+                  className="h-16 w-14 shrink-0 cursor-zoom-in rounded-md border border-ink/15 object-cover dark:border-white/20"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    openPersonPhotoModal(member.name, member.photoUrl)
+                  }}
                   onError={(event) => {
                     event.currentTarget.src = memberPlaceholderImage
                   }}
@@ -1415,22 +1463,84 @@ export default function Homepage() {
               <p className="text-xs font-semibold text-ink/70 dark:text-white/75">
                 পেজ {deceasedPage} / {deceasedTotalPages}
               </p>
-              <div className="flex items-center gap-2">
+
+              <div className="flex items-center gap-1.5 sm:hidden">
+                <button
+                  type="button"
+                  onClick={() => setDeceasedPage((current) => Math.max(1, current - 1))}
+                  disabled={deceasedPage === 1}
+                  className="rounded-lg border border-ink/20 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                >
+                  Previous
+                </button>
+                {deceasedCompactPageItems.map((item, index) => (
+                  item === 'start-ellipsis' || item === 'end-ellipsis'
+                    ? (
+                      <span
+                        key={`deceased-mobile-ellipsis-${index}`}
+                        className="px-1 text-xs font-bold text-ink/60 dark:text-white/70"
+                        aria-hidden="true"
+                      >
+                        ...
+                      </span>
+                      )
+                    : (
+                      <button
+                        key={`deceased-mobile-page-${item}`}
+                        type="button"
+                        onClick={() => setDeceasedPage(item)}
+                        aria-current={deceasedPage === item ? 'page' : undefined}
+                        className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold transition ${
+                          deceasedPage === item
+                            ? 'border border-river/45 bg-river text-white dark:border-sky-200/60 dark:bg-sky-200 dark:text-[#102439]'
+                            : 'border border-ink/20 bg-white text-ink hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15'
+                        }`}
+                      >
+                        {item}
+                      </button>
+                      )
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setDeceasedPage((current) => Math.min(deceasedTotalPages, current + 1))}
+                  disabled={deceasedPage === deceasedTotalPages}
+                  className="rounded-lg border border-river/35 bg-river/10 px-2.5 py-1.5 text-[11px] font-semibold text-river transition hover:bg-river/15 disabled:cursor-not-allowed disabled:opacity-50 dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100 dark:hover:bg-sky-200/20"
+                >
+                  Next
+                </button>
+              </div>
+
+              <div className="hidden flex-wrap items-center gap-2 sm:flex">
                 <button
                   type="button"
                   onClick={() => setDeceasedPage((current) => Math.max(1, current - 1))}
                   disabled={deceasedPage === 1}
                   className="rounded-lg border border-ink/20 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
                 >
-                  পূর্বের
+                  Previous
                 </button>
+                {deceasedPageNumbers.map((pageNumber) => (
+                  <button
+                    key={`deceased-page-${pageNumber}`}
+                    type="button"
+                    onClick={() => setDeceasedPage(pageNumber)}
+                    aria-current={deceasedPage === pageNumber ? 'page' : undefined}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
+                      deceasedPage === pageNumber
+                        ? 'border border-river/45 bg-river text-white dark:border-sky-200/60 dark:bg-sky-200 dark:text-[#102439]'
+                        : 'border border-ink/20 bg-white text-ink hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
                 <button
                   type="button"
                   onClick={() => setDeceasedPage((current) => Math.min(deceasedTotalPages, current + 1))}
                   disabled={deceasedPage === deceasedTotalPages}
                   className="rounded-lg border border-river/35 bg-river/10 px-3 py-1.5 text-xs font-semibold text-river transition hover:bg-river/15 disabled:cursor-not-allowed disabled:opacity-50 dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100 dark:hover:bg-sky-200/20"
                 >
-                  পরের
+                  Next
                 </button>
               </div>
             </div>
@@ -1616,6 +1726,71 @@ export default function Homepage() {
               <button
                 type="button"
                 onClick={closeProfileModal}
+                className="rounded-xl bg-coral px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </article>
+        </div>
+      )}
+
+      {selectedDeceasedMember && (
+        <div
+          className="fixed inset-0 z-[55] flex items-center justify-center bg-ink/65 p-4 backdrop-blur-[1px]"
+          onClick={closeDeceasedProfileModal}
+          role="presentation"
+        >
+          <article
+            className="w-full max-w-lg rounded-3xl border border-ink/15 bg-white p-5 shadow-2xl dark:border-white/20 dark:bg-[#0f1722]"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="প্রয়াত সদস্য প্রোফাইল"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <img
+                  src={selectedDeceasedMember.photoUrl || memberPlaceholderImage}
+                  alt={`${selectedDeceasedMember.name} প্রোফাইল ছবি`}
+                  className="h-24 w-20 shrink-0 cursor-zoom-in rounded-lg border border-ink/15 object-cover shadow-sm dark:border-white/20"
+                  onClick={() => {
+                    openPersonPhotoModal(selectedDeceasedMember.name, selectedDeceasedMember.photoUrl)
+                  }}
+                  onError={(event) => {
+                    event.currentTarget.src = memberPlaceholderImage
+                  }}
+                  loading="lazy"
+                />
+                <div>
+                  <p className="text-xs font-semibold tracking-wide text-coral dark:text-orange-100">স্মরণে</p>
+                  <h4 className="text-xl font-bold text-ink dark:text-white">{selectedDeceasedMember.name}</h4>
+                  <p className="text-sm font-medium text-ink/75 dark:text-white/75">{selectedDeceasedMember.role}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeDeceasedProfileModal}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-ink/20 text-ink/70 transition hover:bg-ink/5 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/10"
+                aria-label="প্রয়াত সদস্য প্রোফাইল বন্ধ করুন"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-2 rounded-2xl border border-ink/10 bg-ink/5 p-4 dark:border-white/15 dark:bg-white/5">
+              <p className="text-sm text-ink/80 dark:text-white/80">
+                <strong>পদবী:</strong> {selectedDeceasedMember.role}
+              </p>
+              <p className="text-sm text-ink/80 dark:text-white/80">
+                <strong>সময়কাল:</strong> {selectedDeceasedMember.tenure}
+              </p>
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={closeDeceasedProfileModal}
                 className="rounded-xl bg-coral px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
               >
                 বন্ধ করুন
