@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { breakingNews, categories, committee, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, notices, upcomingEvents } from '../data/content'
+import { breakingNews, categories, committee, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, notices, programSliderImages, upcomingEvents } from '../data/content'
 
 export default function Homepage() {
   const categoryRef = useRef(null)
@@ -12,7 +12,9 @@ export default function Homepage() {
   const [selectedProfileGroup, setSelectedProfileGroup] = useState('')
   const [activeVideo, setActiveVideo] = useState(null)
   const [activePhoto, setActivePhoto] = useState(null)
+  const [activeProgramSlide, setActiveProgramSlide] = useState(0)
   const [memberQuery, setMemberQuery] = useState('')
+  const [isAllMembersModalOpen, setIsAllMembersModalOpen] = useState(false)
   const [membershipForm, setMembershipForm] = useState({
     type: 'new',
     name: '',
@@ -59,8 +61,22 @@ export default function Homepage() {
       profile: person
     }))
   ]
+  const designationRank = {
+    সভাপতি: 1,
+    'সাধারণ সম্পাদক': 2,
+    'যুগ্ম সম্পাদক': 3,
+    'সাংগঠনিক সম্পাদক': 4
+  }
+  const membersByDesignation = [...memberDirectory].sort((a, b) => {
+    const rankDiff = (designationRank[a.role] || 999) - (designationRank[b.role] || 999)
+    if (rankDiff !== 0) {
+      return rankDiff
+    }
+
+    return a.role.localeCompare(b.role, 'bn') || a.name.localeCompare(b.name, 'bn')
+  })
   const normalizedMemberQuery = memberQuery.trim().toLowerCase()
-  const shouldSearchMembers = normalizedMemberQuery.length >= 2
+  const hasMemberQuery = normalizedMemberQuery.length > 0
   const archiveItems = [
     {
       year: '১৯৬৮',
@@ -87,12 +103,14 @@ export default function Homepage() {
       url: '#'
     }
   ]
-  const filteredMembers = shouldSearchMembers
-    ? memberDirectory.filter((member) => [member.name, member.id, member.role, member.media]
+  const filteredMembers = hasMemberQuery
+    ? membersByDesignation.filter((member) => [member.name, member.id, member.role, member.media]
       .filter(Boolean)
       .some((field) => field.toLowerCase().includes(normalizedMemberQuery)))
-    : []
-  const visibleFilteredMembers = filteredMembers.slice(0, 20)
+    : membersByDesignation
+  const visibleFilteredMembers = hasMemberQuery
+    ? filteredMembers.slice(0, 20)
+    : filteredMembers.slice(0, 10)
   const normalizedArchiveQuery = archiveQuery.trim().toLowerCase()
   const filteredArchiveItems = archiveItems.filter((item) => {
     if (!normalizedArchiveQuery) {
@@ -159,6 +177,30 @@ export default function Homepage() {
 
   const closePhotoModal = () => {
     setActivePhoto(null)
+  }
+
+  const openAllMembersModal = () => {
+    setIsAllMembersModalOpen(true)
+  }
+
+  const closeAllMembersModal = () => {
+    setIsAllMembersModalOpen(false)
+  }
+
+  const showNextProgramSlide = () => {
+    if (programSliderImages.length === 0) {
+      return
+    }
+
+    setActiveProgramSlide((current) => (current + 1) % programSliderImages.length)
+  }
+
+  const showPrevProgramSlide = () => {
+    if (programSliderImages.length === 0) {
+      return
+    }
+
+    setActiveProgramSlide((current) => (current - 1 + programSliderImages.length) % programSliderImages.length)
   }
 
   const handleMembershipSubmit = (event) => {
@@ -267,6 +309,33 @@ export default function Homepage() {
     return () => window.removeEventListener('keydown', handleEscape)
   }, [activePhoto])
 
+  useEffect(() => {
+    if (!isAllMembersModalOpen) {
+      return
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        closeAllMembersModal()
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [isAllMembersModalOpen])
+
+  useEffect(() => {
+    if (programSliderImages.length < 2) {
+      return
+    }
+
+    const intervalId = window.setInterval(() => {
+      setActiveProgramSlide((current) => (current + 1) % programSliderImages.length)
+    }, 5500)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
+
   const scrollCategories = (direction) => {
     const el = categoryRef.current
     if (!el) {
@@ -308,6 +377,69 @@ export default function Homepage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-4 overflow-hidden rounded-3xl border border-ink/10 bg-white p-2 shadow-card dark:border-white/20 dark:bg-white/10 sm:p-3">
+        <div className="relative overflow-hidden rounded-2xl">
+          <div className="relative h-[220px] sm:h-[260px] lg:h-[300px]">
+            {programSliderImages.map((slide, index) => (
+              <article
+                key={`${slide.title}-${index}`}
+                className={`absolute inset-0 transition-opacity duration-700 ${activeProgramSlide === index ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+                aria-hidden={activeProgramSlide !== index}
+              >
+                <img
+                  src={slide.imageUrl}
+                  alt={slide.title}
+                  className="h-full w-full object-cover"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" aria-hidden="true" />
+                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
+                  <p className="inline-flex rounded-full border border-white/35 bg-black/30 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white/95">
+                    প্রোগ্রাম গ্যালারি
+                  </p>
+                  <h3 className="mt-2 max-w-2xl text-base font-bold leading-snug text-white sm:text-xl">{slide.title}</h3>
+                  <p className="mt-1 text-xs font-medium text-white/85 sm:text-sm">{slide.date}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={showPrevProgramSlide}
+            className="absolute left-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/45 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55"
+            aria-label="আগের স্লাইড"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            onClick={showNextProgramSlide}
+            className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/45 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55"
+            aria-label="পরের স্লাইড"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+              <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          <div className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-black/35 px-2 py-1 backdrop-blur-sm">
+            {programSliderImages.map((slide, index) => (
+              <button
+                key={`${slide.title}-dot`}
+                type="button"
+                onClick={() => setActiveProgramSlide(index)}
+                className={`h-2.5 w-2.5 rounded-full transition ${activeProgramSlide === index ? 'bg-white' : 'bg-white/45 hover:bg-white/70'}`}
+                aria-label={`${index + 1} নম্বর স্লাইড দেখুন`}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -775,9 +907,14 @@ export default function Homepage() {
                 নাম বা আইডি দিয়ে নিবন্ধিত সাংবাদিকদের প্রোফাইল, মিডিয়া হাউজের নাম এবং পদবী সার্চ করুন।
               </p>
             </div>
-            <span className="rounded-full border border-river/30 bg-river/10 px-3 py-1 text-xs font-semibold text-river dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100">
+            <button
+              type="button"
+              onClick={openAllMembersModal}
+              className="rounded-full border border-river/30 bg-river/10 px-3 py-1 text-xs font-semibold text-river transition hover:bg-river/15 dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100 dark:hover:bg-sky-200/20"
+              aria-label="সকল সদস্য তালিকা দেখুন"
+            >
               মোট সদস্য: {memberDirectory.length}
-            </span>
+            </button>
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
@@ -788,8 +925,9 @@ export default function Homepage() {
               placeholder="নাম, সদস্য আইডি, পদবী বা মিডিয়া হাউজ লিখুন"
             />
             <button
+              type="button"
               className="rounded-xl bg-coral px-5 py-3 font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!shouldSearchMembers}
+              disabled={!hasMemberQuery}
             >
               সার্চ
             </button>
@@ -804,16 +942,16 @@ export default function Homepage() {
 
           <div className="mt-4 rounded-2xl border border-ink/10 bg-white/80 p-3 dark:border-white/20 dark:bg-white/10">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold tracking-wide text-ink/70 dark:text-white/75">SEARCH RESULT</p>
-              <p className="text-xs font-semibold text-river dark:text-sky-200">ম্যাচ: {filteredMembers.length}</p>
+              <p className="text-xs font-semibold tracking-wide text-ink/70 dark:text-white/75">
+                {hasMemberQuery ? 'SEARCH RESULT' : 'DEFAULT DESIGNATION LIST'}
+              </p>
+              <p className="text-xs font-semibold text-river dark:text-sky-200">
+                {hasMemberQuery ? `ম্যাচ: ${filteredMembers.length}` : `দেখানো হচ্ছে: ${visibleFilteredMembers.length}`}
+              </p>
             </div>
 
             <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-              {!shouldSearchMembers ? (
-                <p className="rounded-xl border border-dashed border-ink/20 bg-ink/5 px-3 py-6 text-center text-sm text-ink/65 dark:border-white/25 dark:bg-white/5 dark:text-white/70">
-                  সার্চ শুরু করতে কমপক্ষে ২টি অক্ষর লিখুন।
-                </p>
-              ) : visibleFilteredMembers.length > 0 ? (
+              {visibleFilteredMembers.length > 0 ? (
                 visibleFilteredMembers.map((member) => (
                   <article
                     key={member.id}
@@ -846,7 +984,7 @@ export default function Homepage() {
                 </p>
               )}
             </div>
-            {shouldSearchMembers && filteredMembers.length > visibleFilteredMembers.length && (
+            {hasMemberQuery && filteredMembers.length > visibleFilteredMembers.length && (
               <p className="mt-2 text-xs text-ink/65 dark:text-white/70">
                 {visibleFilteredMembers.length} জন দেখানো হচ্ছে, আরও ফলাফল পেতে সার্চ আরও নির্দিষ্ট করুন।
               </p>
@@ -1283,6 +1421,70 @@ export default function Homepage() {
                 alt={activePhoto.title}
                 className="max-h-[78vh] w-full object-contain"
               />
+            </div>
+          </article>
+        </div>
+      )}
+
+      {isAllMembersModalOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/70 p-4 backdrop-blur-[1px]"
+          onClick={closeAllMembersModal}
+          role="presentation"
+        >
+          <article
+            className="w-full max-w-3xl rounded-3xl border border-ink/15 bg-white p-5 shadow-2xl dark:border-white/20 dark:bg-[#0f1722]"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="সকল সদস্য তালিকা"
+          >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-xl font-bold text-ink dark:text-white">সকল সদস্য</h4>
+                <p className="text-sm text-ink/70 dark:text-white/75">মোট সদস্য: {membersByDesignation.length}</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeAllMembersModal}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-ink/20 text-ink/70 transition hover:bg-ink/5 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/10"
+                aria-label="সদস্য তালিকা বন্ধ করুন"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="max-h-[68vh] space-y-2 overflow-y-auto pr-1">
+              {membersByDesignation.map((member) => (
+                <article
+                  key={`all-${member.id}`}
+                  className="cursor-pointer rounded-xl border border-ink/10 bg-white p-3 transition hover:border-river/35 hover:shadow-sm dark:border-white/15 dark:bg-white/5 dark:hover:border-sky-300/40"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    closeAllMembersModal()
+                    openProfileModal(member.profile, member.group)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      closeAllMembersModal()
+                      openProfileModal(member.profile, member.group)
+                    }
+                  }}
+                  aria-label={`${member.name} এর প্রোফাইল দেখুন`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <h5 className="font-semibold text-ink dark:text-white">{member.name}</h5>
+                      <p className="text-sm text-river dark:text-sky-200">{member.role}</p>
+                    </div>
+                    <span className="rounded-full bg-coral/15 px-2.5 py-0.5 text-xs font-semibold text-coral dark:bg-coral/25 dark:text-orange-100">{member.id}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-ink/75 dark:text-white/80">মিডিয়া: {member.media}</p>
+                  <p className="mt-1 text-xs text-ink/65 dark:text-white/70">ফোন: {member.phone}</p>
+                </article>
+              ))}
             </div>
           </article>
         </div>

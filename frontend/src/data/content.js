@@ -71,6 +71,34 @@ export const upcomingEvents = [
   }
 ]
 
+export const programSliderImages = [
+  {
+    title: 'সাধারণ সভা ও সদস্য মতবিনিময়',
+    date: 'জুলাই ২০২৬',
+    imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=80'
+  },
+  {
+    title: 'ডিজিটাল সাংবাদিকতা কর্মশালা',
+    date: 'জুন ২০২৬',
+    imageUrl: 'https://images.unsplash.com/photo-1551818255-e6e10975bc17?auto=format&fit=crop&w=1600&q=80'
+  },
+  {
+    title: 'প্রেস ব্রিফিং ও প্রশ্নোত্তর পর্ব',
+    date: 'মে ২০২৬',
+    imageUrl: 'https://images.unsplash.com/photo-1494173853739-c21f58b16055?auto=format&fit=crop&w=1600&q=80'
+  },
+  {
+    title: 'নবীন সাংবাদিক প্রশিক্ষণ সেশন',
+    date: 'এপ্রিল ২০২৬',
+    imageUrl: 'https://images.unsplash.com/photo-1587614382346-4ec70e388b28?auto=format&fit=crop&w=1600&q=80'
+  },
+  {
+    title: 'বার্ষিক সম্মেলন ও পুরস্কার প্রদান',
+    date: 'মার্চ ২০২৬',
+    imageUrl: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1600&q=80'
+  }
+]
+
 export const committee = [
   { name: 'মো. নাসির উদ্দিন', role: 'সভাপতি', phone: '+8801XXXXXXXXX', media: 'দৈনিক কুমিল্লা বার্তা' },
   { name: 'শাহরিয়ার হোসেন', role: 'সাধারণ সম্পাদক', phone: '+8801XXXXXXXXX', media: 'বাংলা নিউজ টুডে' },
