@@ -162,7 +162,7 @@ export default function Header({ darkMode, onToggleTheme }) {
 
       <div className="flex w-full flex-col items-start justify-between gap-4 px-3 py-5 sm:px-5 lg:px-8 md:flex-row md:items-center">
         <div className="flex items-start gap-2.5">
-          <span className="mt-0.5 inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm dark:border-white/20 dark:bg-white/95" aria-label="কুমিল্লা প্রেস ক্লাব লোগো">
+          <span className="mt-0.5 inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm dark:border-white/20 dark:bg-white/95" aria-label="কুমিল্লা প্রেসক্লাব লোগো">
             <img
               src={siteLogo}
               alt="Cumilla Press Club logo"
@@ -173,8 +173,8 @@ export default function Header({ darkMode, onToggleTheme }) {
             />
           </span>
           <div>
-            <h1 className="font-display text-3xl font-bold text-ink dark:text-white">কুমিল্লা প্রেস ক্লাব</h1>
-            <p className="text-sm font-medium italic text-ink/70 dark:text-white/70">Cumilla Press Club Digital Portal</p>
+            <h1 className="font-display text-3xl font-bold text-ink dark:text-white">কুমিল্লা প্রেসক্লাব</h1>
+            <p className="text-sm font-medium italic text-ink/70 dark:text-white/70">কুমিল্লা প্রেসক্লাব ডিজিটাল পোর্টাল</p>
           </div>
         </div>
         <div className="w-full rounded-2xl bg-gradient-to-r from-coral to-river px-6 py-4 text-white md:w-[440px]">

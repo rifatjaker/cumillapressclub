@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { breakingNews, categories, committee, deceasedMembers, departmentsOverview, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, notices, organizationSpotlight, programSliderImages, upcomingEvents } from '../data/content'
+import { breakingNews, categories, committee, deceasedMembers, departmentsOverview, donorMembers, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, notices, organizationSpotlight, programSliderImages, upcomingEvents } from '../data/content'
 
 export default function Homepage() {
   const categoryRef = useRef(null)
@@ -11,11 +11,13 @@ export default function Homepage() {
   const [selectedProfile, setSelectedProfile] = useState(null)
   const [selectedProfileGroup, setSelectedProfileGroup] = useState('')
   const [selectedDeceasedMember, setSelectedDeceasedMember] = useState(null)
+  const [selectedDonorMember, setSelectedDonorMember] = useState(null)
   const [activeVideo, setActiveVideo] = useState(null)
   const [activePhoto, setActivePhoto] = useState(null)
   const [activeProgramSlide, setActiveProgramSlide] = useState(0)
   const [memberQuery, setMemberQuery] = useState('')
   const [deceasedPage, setDeceasedPage] = useState(1)
+  const [donorPage, setDonorPage] = useState(1)
   const [isAllMembersModalOpen, setIsAllMembersModalOpen] = useState(false)
   const [membershipForm, setMembershipForm] = useState({
     type: 'new',
@@ -35,6 +37,13 @@ export default function Homepage() {
     details: ''
   })
   const [pressReleaseSubmitted, setPressReleaseSubmitted] = useState(false)
+  const [complaintForm, setComplaintForm] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    complaint: ''
+  })
+  const [complaintSubmitted, setComplaintSubmitted] = useState(false)
   const [archiveQuery, setArchiveQuery] = useState('')
   const visibleHeroHighlights = heroHighlights.slice(0, 3)
   const hasMoreHeroHighlights = heroHighlights.length > 3
@@ -148,6 +157,36 @@ export default function Homepage() {
     (deceasedPage - 1) * deceasedMembersPerPage,
     deceasedPage * deceasedMembersPerPage
   )
+  const donorTotalPages = Math.max(1, Math.ceil(donorMembers.length / deceasedMembersPerPage))
+  const donorPageNumbers = Array.from({ length: donorTotalPages }, (_, index) => index + 1)
+  const donorCompactPageItems = (() => {
+    if (donorTotalPages <= 5) {
+      return donorPageNumbers
+    }
+
+    const items = [1]
+    const start = Math.max(2, donorPage - 1)
+    const end = Math.min(donorTotalPages - 1, donorPage + 1)
+
+    if (start > 2) {
+      items.push('start-ellipsis')
+    }
+
+    for (let page = start; page <= end; page += 1) {
+      items.push(page)
+    }
+
+    if (end < donorTotalPages - 1) {
+      items.push('end-ellipsis')
+    }
+
+    items.push(donorTotalPages)
+    return items
+  })()
+  const visibleDonorMembers = donorMembers.slice(
+    (donorPage - 1) * deceasedMembersPerPage,
+    donorPage * deceasedMembersPerPage
+  )
   const normalizedArchiveQuery = archiveQuery.trim().toLowerCase()
   const filteredArchiveItems = archiveItems.filter((item) => {
     if (!normalizedArchiveQuery) {
@@ -173,6 +212,14 @@ export default function Homepage() {
 
   const closeDeceasedProfileModal = () => {
     setSelectedDeceasedMember(null)
+  }
+
+  const openDonorProfileModal = (member) => {
+    setSelectedDonorMember(member)
+  }
+
+  const closeDonorProfileModal = () => {
+    setSelectedDonorMember(null)
   }
 
   const getYoutubeEmbedUrl = (url) => {
@@ -273,9 +320,29 @@ export default function Homepage() {
     setPressReleaseSubmitted(true)
   }
 
+  const handleComplaintSubmit = (event) => {
+    event.preventDefault()
+
+    const subject = encodeURIComponent(`অভিযোগ - ${complaintForm.name || 'অজ্ঞাত'}`)
+    const body = encodeURIComponent(
+      `প্রাপক: কুমিল্লা প্রেস ক্লাব\n` +
+      `নাম: ${complaintForm.name}\n` +
+      `মোবাইল: ${complaintForm.phone}\n` +
+      `ঠিকানা: ${complaintForm.address}\n\n` +
+      `অভিযোগের বিস্তারিত:\n${complaintForm.complaint}`
+    )
+
+    window.location.href = `mailto:cumillapressclub1964@gmail.com?subject=${subject}&body=${body}`
+    setComplaintSubmitted(true)
+  }
+
   useEffect(() => {
     setDeceasedPage((current) => Math.min(Math.max(current, 1), deceasedTotalPages))
   }, [deceasedTotalPages])
+
+  useEffect(() => {
+    setDonorPage((current) => Math.min(Math.max(current, 1), donorTotalPages))
+  }, [donorTotalPages])
 
   useEffect(() => {
     const el = categoryRef.current
@@ -1393,6 +1460,55 @@ export default function Homepage() {
                 </p>
               )}
             </article>
+
+            <article className="rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm">
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-mint">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-mint/20 text-[11px] font-bold text-mint">4</span>
+                অভিযোগ বক্স
+              </h4>
+              <p className="mt-1 text-xs text-white/75">
+                কুমিল্লা প্রেস ক্লাব বরাবর আপনার অভিযোগ পাঠান। সাবমিট করলে মেইল ক্লায়েন্ট খুলে যাবে।
+              </p>
+              <form className="mt-2 space-y-2" onSubmit={handleComplaintSubmit}>
+                <input
+                  value={complaintForm.name}
+                  onChange={(event) => setComplaintForm((prev) => ({ ...prev, name: event.target.value }))}
+                  placeholder="নাম"
+                  required
+                  className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                />
+                <input
+                  value={complaintForm.phone}
+                  onChange={(event) => setComplaintForm((prev) => ({ ...prev, phone: event.target.value }))}
+                  placeholder="মোবাইল নম্বর"
+                  required
+                  className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                />
+                <input
+                  value={complaintForm.address}
+                  onChange={(event) => setComplaintForm((prev) => ({ ...prev, address: event.target.value }))}
+                  placeholder="ঠিকানা"
+                  required
+                  className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                />
+                <textarea
+                  value={complaintForm.complaint}
+                  onChange={(event) => setComplaintForm((prev) => ({ ...prev, complaint: event.target.value }))}
+                  placeholder="অভিযোগের বিস্তারিত লিখুন"
+                  rows={3}
+                  required
+                  className="w-full resize-none rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
+                />
+                <button type="submit" className="w-full rounded-lg bg-coral px-3 py-2 text-sm font-semibold text-white transition hover:brightness-110">
+                  অভিযোগ পাঠান
+                </button>
+              </form>
+              {complaintSubmitted && (
+                <p className="mt-2 rounded-lg border border-emerald-300/35 bg-emerald-300/15 px-3 py-2 text-xs text-emerald-100">
+                  আপনার অভিযোগের ড্রাফট মেইল প্রস্তুত হয়েছে: cumillapressclub1964@gmail.com
+                </p>
+              )}
+            </article>
           </div>
         </div>
       </section>
@@ -1548,6 +1664,158 @@ export default function Homepage() {
         </div>
       </section>
 
+      <section id="donor-members" className="mt-6 scroll-mt-24">
+        <div className="rounded-3xl border border-ink/10 bg-gradient-to-br from-[#f4fbff] via-[#f8fff8] to-[#fffdf5] p-5 shadow-card dark:border-white/20 dark:from-[#122134] dark:via-[#102b28] dark:to-[#2a2513]">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="flex items-center gap-2 text-xl font-bold text-ink dark:text-white">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-river/15 text-river dark:bg-sky-200/20 dark:text-sky-100">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                    <path d="M12 5v14" />
+                    <path d="M5 12h14" />
+                    <path d="M7.5 7.5 16.5 16.5" />
+                    <path d="M16.5 7.5 7.5 16.5" />
+                  </svg>
+                </span>
+                দাতা সদস্য
+              </h3>
+              <p className="mt-1 text-sm text-ink/75 dark:text-white/75">ছবি সহ দাতা সদস্য তালিকা</p>
+            </div>
+            <span className="rounded-full border border-river/30 bg-river/10 px-3 py-1 text-xs font-semibold text-river dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100">
+              মোট: {donorMembers.length}
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 700px' }}>
+            {visibleDonorMembers.map((member) => (
+              <article
+                key={`${member.name}-${member.tenure}`}
+                className="flex cursor-pointer items-center gap-3 rounded-xl border border-ink/10 bg-white p-3 transition hover:border-river/35 hover:shadow-sm dark:border-white/15 dark:bg-white/5 dark:hover:border-sky-200/40"
+                role="button"
+                tabIndex={0}
+                onClick={() => openDonorProfileModal(member)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    openDonorProfileModal(member)
+                  }
+                }}
+                aria-label={`${member.name} এর প্রোফাইল দেখুন`}
+              >
+                <img
+                  src={member.photoUrl || memberPlaceholderImage}
+                  alt={`${member.name} ছবি`}
+                  className="h-16 w-14 shrink-0 cursor-zoom-in rounded-md border border-ink/15 object-cover dark:border-white/20"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    openPersonPhotoModal(member.name, member.photoUrl)
+                  }}
+                  onError={(event) => {
+                    event.currentTarget.src = memberPlaceholderImage
+                  }}
+                  loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
+                />
+                <div className="min-w-0">
+                  <h4 className="truncate text-sm font-semibold text-ink dark:text-white">{member.name}</h4>
+                  <p className="text-xs text-river dark:text-sky-200">{member.role}</p>
+                  <p className="text-xs text-ink/65 dark:text-white/70">সময়কাল: {member.tenure}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {donorTotalPages > 1 && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 bg-white/75 px-3 py-2 dark:border-white/15 dark:bg-white/10">
+              <p className="text-xs font-semibold text-ink/70 dark:text-white/75">
+                পেজ {donorPage} / {donorTotalPages}
+              </p>
+
+              <div className="flex items-center gap-1.5 sm:hidden">
+                <button
+                  type="button"
+                  onClick={() => setDonorPage((current) => Math.max(1, current - 1))}
+                  disabled={donorPage === 1}
+                  className="rounded-lg border border-ink/20 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                >
+                  Previous
+                </button>
+                {donorCompactPageItems.map((item, index) => (
+                  item === 'start-ellipsis' || item === 'end-ellipsis'
+                    ? (
+                      <span
+                        key={`donor-mobile-ellipsis-${index}`}
+                        className="px-1 text-xs font-bold text-ink/60 dark:text-white/70"
+                        aria-hidden="true"
+                      >
+                        ...
+                      </span>
+                      )
+                    : (
+                      <button
+                        key={`donor-mobile-page-${item}`}
+                        type="button"
+                        onClick={() => setDonorPage(item)}
+                        aria-current={donorPage === item ? 'page' : undefined}
+                        className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold transition ${
+                          donorPage === item
+                            ? 'border border-river/45 bg-river text-white dark:border-sky-200/60 dark:bg-sky-200 dark:text-[#102439]'
+                            : 'border border-ink/20 bg-white text-ink hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15'
+                        }`}
+                      >
+                        {item}
+                      </button>
+                      )
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setDonorPage((current) => Math.min(donorTotalPages, current + 1))}
+                  disabled={donorPage === donorTotalPages}
+                  className="rounded-lg border border-river/35 bg-river/10 px-2.5 py-1.5 text-[11px] font-semibold text-river transition hover:bg-river/15 disabled:cursor-not-allowed disabled:opacity-50 dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100 dark:hover:bg-sky-200/20"
+                >
+                  Next
+                </button>
+              </div>
+
+              <div className="hidden flex-wrap items-center gap-2 sm:flex">
+                <button
+                  type="button"
+                  onClick={() => setDonorPage((current) => Math.max(1, current - 1))}
+                  disabled={donorPage === 1}
+                  className="rounded-lg border border-ink/20 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                >
+                  Previous
+                </button>
+                {donorPageNumbers.map((pageNumber) => (
+                  <button
+                    key={`donor-page-${pageNumber}`}
+                    type="button"
+                    onClick={() => setDonorPage(pageNumber)}
+                    aria-current={donorPage === pageNumber ? 'page' : undefined}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
+                      donorPage === pageNumber
+                        ? 'border border-river/45 bg-river text-white dark:border-sky-200/60 dark:bg-sky-200 dark:text-[#102439]'
+                        : 'border border-ink/20 bg-white text-ink hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setDonorPage((current) => Math.min(donorTotalPages, current + 1))}
+                  disabled={donorPage === donorTotalPages}
+                  className="rounded-lg border border-river/35 bg-river/10 px-3 py-1.5 text-xs font-semibold text-river transition hover:bg-river/15 disabled:cursor-not-allowed disabled:opacity-50 dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100 dark:hover:bg-sky-200/20"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
       <footer
         id="contact"
         className="relative left-1/2 mt-10 w-[100dvw] max-w-[100dvw] -translate-x-1/2 scroll-mt-24 overflow-hidden border-y border-white/10 bg-gradient-to-br from-[#091722] via-[#0e2536] to-[#173844] px-3 py-8 text-white shadow-card sm:px-4"
@@ -1616,7 +1884,7 @@ export default function Homepage() {
               <p className="mt-1 text-xs text-white/70">আপডেট পেতে আমাদের অফিসিয়াল চ্যানেলগুলোতে যুক্ত থাকুন</p>
             </div>
             <div className="flex flex-wrap gap-2 text-sm">
-              <a href="https://www.facebook.com" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 transition hover:bg-white/20">
+              <a href="https://www.facebook.com/share/19Dr5t8wkK/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 transition hover:bg-white/20">
                 <span aria-hidden="true">f</span>
                 Facebook
               </a>
@@ -1644,6 +1912,12 @@ export default function Homepage() {
                 A2 Technologies
               </a>
             </p>
+          </div>
+
+          <div className="mt-4 text-center text-sm text-white/80">
+            <p>সার্বিক পরিকল্পনা ও বাস্তবায়নে: মো: আসিফ হোসাইন মান্না</p>
+            <p>বিজ্ঞান,তথ্য প্রযুক্তি ও গবেষণা সম্পাদক</p>
+            <p>কুমিল্লা প্রেসক্লাব</p>
           </div>
         </div>
       </footer>
@@ -1792,6 +2066,76 @@ export default function Homepage() {
                 type="button"
                 onClick={closeDeceasedProfileModal}
                 className="rounded-xl bg-coral px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </article>
+        </div>
+      )}
+
+      {selectedDonorMember && (
+        <div
+          className="fixed inset-0 z-[56] flex items-center justify-center bg-ink/65 p-4 backdrop-blur-[1px]"
+          onClick={closeDonorProfileModal}
+          role="presentation"
+        >
+          <article
+            className="w-full max-w-lg rounded-3xl border border-ink/15 bg-white p-5 shadow-2xl dark:border-white/20 dark:bg-[#0f1722]"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="দাতা সদস্য প্রোফাইল"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <img
+                  src={selectedDonorMember.photoUrl || memberPlaceholderImage}
+                  alt={`${selectedDonorMember.name} প্রোফাইল ছবি`}
+                  className="h-24 w-20 shrink-0 cursor-zoom-in rounded-lg border border-ink/15 object-cover shadow-sm dark:border-white/20"
+                  onClick={() => {
+                    openPersonPhotoModal(selectedDonorMember.name, selectedDonorMember.photoUrl)
+                  }}
+                  onError={(event) => {
+                    event.currentTarget.src = memberPlaceholderImage
+                  }}
+                  loading="lazy"
+                />
+                <div>
+                  <p className="text-xs font-semibold tracking-wide text-river dark:text-sky-200">সম্মাননায়</p>
+                  <h4 className="text-xl font-bold text-ink dark:text-white">{selectedDonorMember.name}</h4>
+                  <p className="text-sm font-medium text-ink/75 dark:text-white/75">{selectedDonorMember.role}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeDonorProfileModal}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-ink/20 text-ink/70 transition hover:bg-ink/5 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/10"
+                aria-label="দাতা সদস্য প্রোফাইল বন্ধ করুন"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-2 rounded-2xl border border-ink/10 bg-ink/5 p-4 dark:border-white/15 dark:bg-white/5">
+              <p className="text-sm text-ink/80 dark:text-white/80">
+                <strong>পদবী:</strong> {selectedDonorMember.role}
+              </p>
+              <p className="text-sm text-ink/80 dark:text-white/80">
+                <strong>সময়কাল:</strong> {selectedDonorMember.tenure}
+              </p>
+              {selectedDonorMember.contribution && (
+                <p className="text-sm text-ink/80 dark:text-white/80">
+                  <strong>অবদান:</strong> {selectedDonorMember.contribution}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={closeDonorProfileModal}
+                className="rounded-xl bg-river px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
               >
                 বন্ধ করুন
               </button>
