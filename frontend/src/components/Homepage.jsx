@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { breakingNews, categories, committee, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, notices, programSliderImages, upcomingEvents } from '../data/content'
+import { breakingNews, categories, committee, departmentsOverview, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, notices, organizationSpotlight, programSliderImages, upcomingEvents } from '../data/content'
 
 export default function Homepage() {
   const categoryRef = useRef(null)
@@ -375,6 +375,44 @@ export default function Homepage() {
       </a>
     ))
 
+  const renderDepartmentIcon = (type) => {
+    if (type === 'chat') {
+      return <path d="M5 6h14v9H9l-4 3V6zM9 10h.01M12 10h.01M15 10h.01" />
+    }
+    if (type === 'group') {
+      return <path d="M8 9a2.5 2.5 0 1 0 0-.01zM16 9a2.5 2.5 0 1 0 0-.01zM3.5 19c0-2.4 2-4.2 4.5-4.2s4.5 1.8 4.5 4.2M11.5 19c0-2.1 1.8-3.8 4.2-3.8S20 16.9 20 19" />
+    }
+    if (type === 'library') {
+      return <path d="M5 5h3v14H5zM10 5h3v14h-3zM15 5h4v14h-4zM4 19h16" />
+    }
+    if (type === 'sport') {
+      return <path d="M12 5l2.6 2.6L12 10l-2.6-2.4L12 5zM7 19l4-4m6-1l-3 3M7 9l2 2m6 6l2 2" />
+    }
+    if (type === 'video') {
+      return <path d="M4 7h11v10H4zM15 10l5-2v8l-5-2M8 11l3 2-3 2z" />
+    }
+    if (type === 'grid') {
+      return <path d="M5 5h6v6H5zM13 5h6v6h-6zM5 13h6v6H5zM13 13h6v6h-6z" />
+    }
+    if (type === 'puzzle') {
+      return <path d="M8 7h3a2 2 0 1 1 4 0h3v3a2 2 0 1 1 0 4v3h-3a2 2 0 1 1-4 0H8v-3a2 2 0 1 1 0-4V7z" />
+    }
+    if (type === 'clipboard') {
+      return <path d="M9 4h6v3H9zM6 6h12v14H6zM9 11h6M9 15h4" />
+    }
+    if (type === 'users') {
+      return <path d="M8 10a2.3 2.3 0 1 0 0-.01zM16 10a2.3 2.3 0 1 0 0-.01zM4.5 18c0-2.2 1.9-3.8 4.2-3.8s4.2 1.6 4.2 3.8M11.1 18c.2-1.8 1.8-3.1 3.8-3.1 2.1 0 3.8 1.4 4.1 3.1" />
+    }
+    if (type === 'flower') {
+      return <path d="M12 12a2.2 2.2 0 1 0 0-.01zM12 6c1.7 0 2.3 1.6 2.3 3.1M6 12c0-1.7 1.6-2.3 3.1-2.3M12 18c-1.7 0-2.3-1.6-2.3-3.1M18 12c0 1.7-1.6 2.3-3.1 2.3M12 14v5" />
+    }
+    if (type === 'briefcase') {
+      return <path d="M3.5 8h17v10h-17zM9 8V6h6v2M3.5 12h17" />
+    }
+
+    return <path d="M12 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM12 10v4" />
+  }
+
   return (
     <main id="home" className="mx-auto w-[min(1200px,94vw)] py-6">
       <section id="news-notices" className="scroll-mt-24 overflow-hidden rounded-2xl bg-ink text-white">
@@ -639,6 +677,90 @@ export default function Homepage() {
             </div>
           </div>
         </aside>
+      </section>
+
+      <section className="mt-6 overflow-hidden rounded-3xl border border-ink/10 bg-gradient-to-br from-white via-[#f8fcff] to-[#eef7ff] p-4 shadow-card dark:border-white/20 dark:from-[#0f1d2c] dark:via-[#122538] dark:to-[#0f2a34] sm:p-6">
+        <div className="grid items-center gap-5 lg:grid-cols-[1fr_1.25fr]">
+          <div className="relative mx-auto w-full max-w-[460px]">
+            <div className="aspect-square overflow-hidden rounded-[2.2rem] border border-ink/10 bg-black shadow-xl dark:border-white/20">
+              <img
+                src={organizationSpotlight.imageUrl}
+                alt="কুমিল্লা প্রেস ক্লাব"
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+            <div className="absolute -left-4 top-5 rounded-full border border-white/35 bg-coral px-4 py-3 text-center text-white shadow-lg sm:-left-6 sm:px-5">
+              <p className="text-[11px] font-semibold tracking-wide">প্রতিষ্ঠিত</p>
+              <p className="text-2xl font-bold leading-none">{organizationSpotlight.established}</p>
+            </div>
+            <div className="absolute -bottom-5 right-4 w-[220px] rounded-2xl border border-white/30 bg-[#063d14] p-3 text-white shadow-xl sm:right-6">
+              <p className="text-4xl font-bold leading-none">{organizationSpotlight.statNumber}</p>
+              <p className="mt-1 text-sm font-semibold text-[#d5f8d2]">{organizationSpotlight.statLabel}</p>
+              <p className="text-xs text-[#b9ecb5]">{organizationSpotlight.statCaption}</p>
+            </div>
+          </div>
+
+          <div>
+            <p className="inline-flex items-center rounded-full border border-river/25 bg-river/10 px-3 py-1 text-xs font-semibold tracking-wide text-river dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100">
+              {organizationSpotlight.badge}
+            </p>
+            <h2 className="mt-3 text-3xl font-bold leading-tight text-ink dark:text-white sm:text-4xl">
+              {organizationSpotlight.title}
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-ink/80 dark:text-white/82 sm:text-base">
+              {organizationSpotlight.summary}
+            </p>
+
+            <div className="mt-4 divide-y divide-ink/12 rounded-2xl border border-ink/10 bg-white/75 dark:divide-white/12 dark:border-white/20 dark:bg-white/5">
+              {organizationSpotlight.highlights.map((item) => (
+                <a
+                  key={item}
+                  href="#about"
+                  className="flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-[#0f5132] transition hover:bg-[#e8f6ee] dark:text-mint dark:hover:bg-white/10"
+                >
+                  <span aria-hidden="true">⊕</span>
+                  <span>{item}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative mt-6 overflow-hidden rounded-3xl border border-emerald-900/20 bg-[#0d3f2f] p-4 text-white shadow-card sm:p-6">
+        <div className="absolute inset-0">
+          <img
+            src={departmentsOverview.backgroundImageUrl}
+            alt="কুমিল্লা প্রেস ক্লাব ব্যাকগ্রাউন্ড"
+            className="h-full w-full object-cover opacity-15"
+            loading="lazy"
+          />
+        </div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(134,239,172,0.12),transparent_48%)]" aria-hidden="true" />
+
+        <div className="relative">
+          <div className="text-center">
+            <p className="text-sm font-semibold tracking-wide text-[#d5f3df]">{departmentsOverview.kicker}</p>
+            <h3 className="mt-1 text-2xl font-bold text-white sm:text-4xl">{departmentsOverview.title}</h3>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {departmentsOverview.items.map((item) => (
+              <article
+                key={item.title}
+                className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/95 p-3 text-[#0f5132] shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f1f5f9] text-[#16a34a]">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    {renderDepartmentIcon(item.icon)}
+                  </svg>
+                </span>
+                <p className="text-sm font-semibold leading-snug">{item.title}</p>
+              </article>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="mt-8 grid scroll-mt-24 gap-5 lg:grid-cols-2">

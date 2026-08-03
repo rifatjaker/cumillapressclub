@@ -99,6 +99,42 @@ export const programSliderImages = [
   }
 ]
 
+export const organizationSpotlight = {
+  badge: 'কুমিল্লা প্রেস ক্লাব',
+  title: 'জনতার আস্থা, জনতার অধিকার',
+  established: '১৯৬৮',
+  summary: '১৯৬৮ সালে প্রতিষ্ঠিত কুমিল্লা প্রেস ক্লাব সাংবাদিকদের একটি ঐতিহ্যবাহী পেশাগত প্ল্যাটফর্ম। বস্তুনিষ্ঠ সাংবাদিকতা, পেশাগত মানোন্নয়ন, গণমাধ্যমের স্বাধীনতা এবং জনস্বার্থভিত্তিক সংবাদচর্চায় এই সংগঠন দীর্ঘদিন ধরে অগ্রণী ভূমিকা পালন করে আসছে। নতুন প্রজন্মের সাংবাদিকদের দক্ষতা বৃদ্ধি, নৈতিক সাংবাদিকতা চর্চা এবং সামাজিক দায়বদ্ধতা নিশ্চিত করাই আমাদের প্রধান লক্ষ্য।',
+  statNumber: '৮০০+',
+  statLabel: 'পেশাদার সাংবাদিক',
+  statCaption: 'কুমিল্লা প্রেস ক্লাবের সদস্য',
+  imageUrl: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1400&q=80',
+  highlights: [
+    'কুমিল্লা প্রেস ক্লাবের ইতিহাস',
+    'কুমিল্লা প্রেস ক্লাবের গঠনতন্ত্র',
+    'কুমিল্লা প্রেস ক্লাবের লক্ষ্য ও উদ্দেশ্য'
+  ]
+}
+
+export const departmentsOverview = {
+  kicker: 'একসাথে সবকিছু',
+  title: 'কুমিল্লা প্রেস ক্লাবের বিভাগ ও দপ্তর',
+  backgroundImageUrl: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80',
+  items: [
+    { title: 'মিডিয়া সেন্টার', icon: 'chat' },
+    { title: 'প্রেস ক্লাব কনফারেন্স রুম', icon: 'group' },
+    { title: 'লাইব্রেরি ও রিডিং রুম', icon: 'library' },
+    { title: 'স্পোর্টস ও জিমনেশিয়াম', icon: 'sport' },
+    { title: 'টিভি রুম', icon: 'video' },
+    { title: 'সদস্য ক্যান্টিন', icon: 'grid' },
+    { title: 'কার্যক্রম', icon: 'puzzle' },
+    { title: 'ক্লাব অফিস', icon: 'clipboard' },
+    { title: 'মানবতা কর্ম', icon: 'users' },
+    { title: 'অতিথি কক্ষ', icon: 'flower' },
+    { title: 'স্টাফ অফিস রুম', icon: 'briefcase' },
+    { title: 'সার্ভিস কর্নার', icon: 'pin' }
+  ]
+}
+
 export const committee = [
   { name: 'মো. নাসির উদ্দিন', role: 'সভাপতি', phone: '+8801XXXXXXXXX', media: 'দৈনিক কুমিল্লা বার্তা' },
   { name: 'শাহরিয়ার হোসেন', role: 'সাধারণ সম্পাদক', phone: '+8801XXXXXXXXX', media: 'বাংলা নিউজ টুডে' },
