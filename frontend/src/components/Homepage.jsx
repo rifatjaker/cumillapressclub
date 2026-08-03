@@ -41,7 +41,7 @@ export default function Homepage() {
   const hasMoreLeadershipProfiles = leadershipProfiles.some((leader) => !priorityLeadershipRoles.has(leader.role))
   const visibleCommittee = committee.slice(0, 4)
   const hasMoreCommittee = committee.length > 4
-  const memberPlaceholderImage = '/member-placeholder.svg'
+  const memberPlaceholderImage = `${import.meta.env.BASE_URL}member-placeholder.svg`
   const memberDirectory = [
     ...leadershipProfiles.map((person, index) => ({
       id: `CPC-L-${String(index + 1).padStart(3, '0')}`,
@@ -180,6 +180,14 @@ export default function Homepage() {
 
   const closePhotoModal = () => {
     setActivePhoto(null)
+  }
+
+  const openPersonPhotoModal = (name, imageUrl) => {
+    openPhotoModal({
+      title: `${name} - প্রোফাইল ছবি`,
+      imageUrl: imageUrl || memberPlaceholderImage,
+      isProfileImage: true
+    })
   }
 
   const openAllMembersModal = () => {
@@ -663,7 +671,11 @@ export default function Homepage() {
                   <img
                     src={leader.photoUrl || memberPlaceholderImage}
                     alt={`${leader.name} প্রোফাইল ছবি`}
-                    className="h-16 w-12 shrink-0 rounded-lg border border-ink/15 object-cover dark:border-white/20"
+                    className="h-16 w-12 shrink-0 cursor-zoom-in rounded-lg border border-ink/15 object-cover dark:border-white/20"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      openPersonPhotoModal(leader.name, leader.photoUrl)
+                    }}
                     onError={(event) => {
                       event.currentTarget.src = memberPlaceholderImage
                     }}
@@ -753,7 +765,11 @@ export default function Homepage() {
                   <img
                     src={person.photoUrl || memberPlaceholderImage}
                     alt={`${person.name} প্রোফাইল ছবি`}
-                    className="h-14 w-11 shrink-0 rounded-md border border-ink/15 object-cover dark:border-white/20"
+                    className="h-14 w-11 shrink-0 cursor-zoom-in rounded-md border border-ink/15 object-cover dark:border-white/20"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      openPersonPhotoModal(person.name, person.photoUrl)
+                    }}
                     onError={(event) => {
                       event.currentTarget.src = memberPlaceholderImage
                     }}
@@ -994,7 +1010,11 @@ export default function Homepage() {
                         <img
                           src={member.photoUrl}
                           alt={`${member.name} ছবি`}
-                          className="h-14 w-11 shrink-0 rounded-md border border-ink/15 object-cover dark:border-white/20"
+                          className="h-14 w-11 shrink-0 cursor-zoom-in rounded-md border border-ink/15 object-cover dark:border-white/20"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openPersonPhotoModal(member.name, member.photoUrl)
+                          }}
                           onError={(event) => {
                             event.currentTarget.src = memberPlaceholderImage
                           }}
@@ -1313,9 +1333,18 @@ export default function Homepage() {
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-river to-coral text-base font-bold text-white">
-                  {selectedProfile.photoTag || selectedProfile.name.slice(0, 2)}
-                </div>
+                <img
+                  src={selectedProfile.photoUrl || memberPlaceholderImage}
+                  alt={`${selectedProfile.name} প্রোফাইল ছবি`}
+                  className="h-24 w-20 shrink-0 cursor-zoom-in rounded-lg border border-ink/15 object-cover shadow-sm dark:border-white/20"
+                  onClick={() => {
+                    openPersonPhotoModal(selectedProfile.name, selectedProfile.photoUrl)
+                  }}
+                  onError={(event) => {
+                    event.currentTarget.src = memberPlaceholderImage
+                  }}
+                  loading="lazy"
+                />
                 <div>
                   <p className="text-xs font-semibold tracking-wide text-river dark:text-sky-200">
                     {selectedProfileGroup === 'leadership' ? 'নেতৃত্ব' : 'নির্বাহী কমিটি'}
@@ -1431,7 +1460,7 @@ export default function Homepage() {
           role="presentation"
         >
           <article
-            className="w-full max-w-5xl overflow-hidden rounded-2xl border border-white/20 bg-[#0b1220] p-3 shadow-2xl"
+            className={`w-full overflow-hidden rounded-2xl border border-white/20 bg-[#0b1220] p-3 shadow-2xl ${activePhoto.isProfileImage ? 'max-w-md' : 'max-w-5xl'}`}
             onClick={(event) => event.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -1452,7 +1481,9 @@ export default function Homepage() {
               <img
                 src={activePhoto.imageUrl}
                 alt={activePhoto.title}
-                className="max-h-[78vh] w-full object-contain"
+                className={activePhoto.isProfileImage
+                  ? 'mx-auto h-[320px] w-[240px] max-w-full rounded-lg object-cover sm:h-[420px] sm:w-[300px]'
+                  : 'max-h-[78vh] w-full object-contain'}
               />
             </div>
           </article>
@@ -1512,7 +1543,11 @@ export default function Homepage() {
                       <img
                         src={member.photoUrl}
                         alt={`${member.name} ছবি`}
-                        className="h-14 w-11 shrink-0 rounded-md border border-ink/15 object-cover dark:border-white/20"
+                        className="h-14 w-11 shrink-0 cursor-zoom-in rounded-md border border-ink/15 object-cover dark:border-white/20"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          openPersonPhotoModal(member.name, member.photoUrl)
+                        }}
                         onError={(event) => {
                           event.currentTarget.src = memberPlaceholderImage
                         }}
