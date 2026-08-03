@@ -41,6 +41,7 @@ export default function Homepage() {
   const hasMoreLeadershipProfiles = leadershipProfiles.some((leader) => !priorityLeadershipRoles.has(leader.role))
   const visibleCommittee = committee.slice(0, 4)
   const hasMoreCommittee = committee.length > 4
+  const memberPlaceholderImage = '/member-placeholder.svg'
   const memberDirectory = [
     ...leadershipProfiles.map((person, index) => ({
       id: `CPC-L-${String(index + 1).padStart(3, '0')}`,
@@ -48,7 +49,7 @@ export default function Homepage() {
       role: person.role,
       media: person.media || 'কুমিল্লা প্রেস ক্লাব',
       phone: person.phone,
-      photoUrl: person.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=0f4d73&color=ffffff&size=128&bold=true`,
+      photoUrl: person.photoUrl || memberPlaceholderImage,
       group: 'leadership',
       profile: person
     })),
@@ -58,7 +59,7 @@ export default function Homepage() {
       role: person.role,
       media: person.media,
       phone: person.phone,
-      photoUrl: person.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=175c4a&color=ffffff&size=128&bold=true`,
+      photoUrl: person.photoUrl || memberPlaceholderImage,
       group: 'committee',
       profile: person
     }))
@@ -659,9 +660,15 @@ export default function Homepage() {
                 aria-label={`${leader.name} এর প্রোফাইল দেখুন`}
               >
                 <div className="flex gap-3">
-                  <div className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-river to-coral text-sm font-bold text-white">
-                    {leader.photoTag}
-                  </div>
+                  <img
+                    src={leader.photoUrl || memberPlaceholderImage}
+                    alt={`${leader.name} প্রোফাইল ছবি`}
+                    className="h-16 w-12 shrink-0 rounded-lg border border-ink/15 object-cover dark:border-white/20"
+                    onError={(event) => {
+                      event.currentTarget.src = memberPlaceholderImage
+                    }}
+                    loading="lazy"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold tracking-wide text-river dark:text-sky-200">{leader.role}</p>
                     <h4 className="text-lg font-bold text-ink dark:text-white">{leader.name}</h4>
@@ -742,8 +749,21 @@ export default function Homepage() {
                 }}
                 aria-label={`${person.name} এর প্রোফাইল দেখুন`}
               >
-                <p className="font-semibold text-ink dark:text-white">{person.name}</p>
-                <p className="text-sm font-medium text-river dark:text-sky-200">{person.role}</p>
+                <div className="flex items-start gap-2.5">
+                  <img
+                    src={person.photoUrl || memberPlaceholderImage}
+                    alt={`${person.name} প্রোফাইল ছবি`}
+                    className="h-14 w-11 shrink-0 rounded-md border border-ink/15 object-cover dark:border-white/20"
+                    onError={(event) => {
+                      event.currentTarget.src = memberPlaceholderImage
+                    }}
+                    loading="lazy"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-ink dark:text-white">{person.name}</p>
+                    <p className="text-sm font-medium text-river dark:text-sky-200">{person.role}</p>
+                  </div>
+                </div>
                 <p className="mt-1 flex-1 rounded-md bg-ink/5 px-2 py-1 text-xs font-semibold text-[#111827] dark:bg-white/10 dark:text-[#f8fafc]">{person.media}</p>
                 <p className="mt-2 inline-flex w-fit rounded-full bg-river/10 px-2 py-0.5 text-xs font-semibold text-river dark:bg-white/15 dark:text-white/90">{person.phone}</p>
                 <button
@@ -974,7 +994,10 @@ export default function Homepage() {
                         <img
                           src={member.photoUrl}
                           alt={`${member.name} ছবি`}
-                          className="h-11 w-11 shrink-0 rounded-xl border border-ink/15 object-cover dark:border-white/20"
+                          className="h-14 w-11 shrink-0 rounded-md border border-ink/15 object-cover dark:border-white/20"
+                          onError={(event) => {
+                            event.currentTarget.src = memberPlaceholderImage
+                          }}
                           loading="lazy"
                         />
                         <div className="min-w-0">
@@ -1489,7 +1512,10 @@ export default function Homepage() {
                       <img
                         src={member.photoUrl}
                         alt={`${member.name} ছবি`}
-                        className="h-11 w-11 shrink-0 rounded-xl border border-ink/15 object-cover dark:border-white/20"
+                        className="h-14 w-11 shrink-0 rounded-md border border-ink/15 object-cover dark:border-white/20"
+                        onError={(event) => {
+                          event.currentTarget.src = memberPlaceholderImage
+                        }}
                         loading="lazy"
                       />
                       <div className="min-w-0">
