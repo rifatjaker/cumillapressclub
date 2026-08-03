@@ -118,7 +118,7 @@ export const organizationSpotlight = {
 export const departmentsOverview = {
   kicker: 'একসাথে সবকিছু',
   title: 'কুমিল্লা প্রেস ক্লাবের বিভাগ ও দপ্তর',
-  backgroundImageUrl: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80',
+  backgroundImageUrl: 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWm8rdjrE0thMbLLbjPrjHIDV9qkBKKtAczVdFzWVOJZWTCE-5uZVUHb6jUDsikyGcayHikg_GHiO6lnA9NPvb9ihMER4uNwcDKaPJfmK1g5aMzCaf4shq67FAqgo3LXcPQA7ekYVA=s680-w680-h510-rw',
   items: [
     { title: 'মিডিয়া সেন্টার', icon: 'chat' },
     { title: 'প্রেস ক্লাব কনফারেন্স রুম', icon: 'group' },
