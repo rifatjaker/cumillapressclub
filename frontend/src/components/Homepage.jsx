@@ -889,7 +889,7 @@ export default function Homepage() {
       </section>
 
       <section id="members" className="mt-8 grid scroll-mt-24 gap-5 lg:grid-cols-5">
-        <div className="rounded-3xl border border-ink/10 bg-gradient-to-br from-[#fff7ec] via-[#f3f9ff] to-[#eefef5] p-5 shadow-card dark:border-white/20 dark:from-[#111d2a] dark:via-[#112a3a] dark:to-[#123526] lg:col-span-3">
+        <div className="flex h-full min-h-0 flex-col rounded-3xl border border-ink/10 bg-gradient-to-br from-[#fff7ec] via-[#f3f9ff] to-[#eefef5] p-5 shadow-card dark:border-white/20 dark:from-[#111d2a] dark:via-[#112a3a] dark:to-[#123526] lg:col-span-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="flex items-center gap-2 text-xl font-bold text-ink dark:text-white">
@@ -940,17 +940,17 @@ export default function Homepage() {
             </button>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-ink/10 bg-white/80 p-3 dark:border-white/20 dark:bg-white/10">
+          <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-2xl border border-ink/10 bg-white/80 p-3 dark:border-white/20 dark:bg-white/10">
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="text-xs font-semibold tracking-wide text-ink/70 dark:text-white/75">
-                {hasMemberQuery ? 'SEARCH RESULT' : 'DEFAULT DESIGNATION LIST'}
+                {hasMemberQuery ? 'SEARCH RESULT' : 'সদস্য তালিকা'}
               </p>
               <p className="text-xs font-semibold text-river dark:text-sky-200">
                 {hasMemberQuery ? `ম্যাচ: ${filteredMembers.length}` : `দেখানো হচ্ছে: ${visibleFilteredMembers.length}`}
               </p>
             </div>
 
-            <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+            <div className="min-h-[16rem] flex-1 space-y-2 overflow-y-auto pr-1">
               {visibleFilteredMembers.length > 0 ? (
                 visibleFilteredMembers.map((member) => (
                   <article
