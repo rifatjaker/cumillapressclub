@@ -41,7 +41,7 @@ export default function Homepage() {
   const hasMoreLeadershipProfiles = leadershipProfiles.some((leader) => !priorityLeadershipRoles.has(leader.role))
   const visibleCommittee = committee.slice(0, 4)
   const hasMoreCommittee = committee.length > 4
-  const memberPlaceholderImage = `${import.meta.env.BASE_URL}member-placeholder.svg`
+  const memberPlaceholderImage = `${import.meta.env.BASE_URL}member-placeholder.png`
   const memberDirectory = [
     ...leadershipProfiles.map((person, index) => ({
       id: `CPC-L-${String(index + 1).padStart(3, '0')}`,

@@ -146,11 +146,11 @@ export default function Header({ darkMode, onToggleTheme }) {
 
       <div className="flex w-full flex-col items-start justify-between gap-4 px-3 py-5 sm:px-5 lg:px-8 md:flex-row md:items-center">
         <div className="flex items-start gap-2.5">
-          <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm dark:border-white/20 dark:bg-white/95" aria-label="কুমিল্লা প্রেস ক্লাব লোগো">
+          <span className="mt-0.5 inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm dark:border-white/20 dark:bg-white/95" aria-label="কুমিল্লা প্রেস ক্লাব লোগো">
             <img
               src={siteLogo}
               alt="Cumilla Press Club logo"
-              className="h-full w-full object-contain p-1"
+              className="h-full w-full object-contain p-1.5"
               loading="eager"
               decoding="async"
             />
