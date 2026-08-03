@@ -48,6 +48,7 @@ export default function Homepage() {
       role: person.role,
       media: person.media || 'কুমিল্লা প্রেস ক্লাব',
       phone: person.phone,
+      photoUrl: person.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=0f4d73&color=ffffff&size=128&bold=true`,
       group: 'leadership',
       profile: person
     })),
@@ -57,6 +58,7 @@ export default function Homepage() {
       role: person.role,
       media: person.media,
       phone: person.phone,
+      photoUrl: person.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=175c4a&color=ffffff&size=128&bold=true`,
       group: 'committee',
       profile: person
     }))
@@ -968,9 +970,17 @@ export default function Homepage() {
                     aria-label={`${member.name} এর প্রোফাইল দেখুন`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <h4 className="font-semibold text-ink dark:text-white">{member.name}</h4>
-                        <p className="text-sm text-river dark:text-sky-200">{member.role}</p>
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <img
+                          src={member.photoUrl}
+                          alt={`${member.name} ছবি`}
+                          className="h-11 w-11 shrink-0 rounded-xl border border-ink/15 object-cover dark:border-white/20"
+                          loading="lazy"
+                        />
+                        <div className="min-w-0">
+                          <h4 className="truncate font-semibold text-ink dark:text-white">{member.name}</h4>
+                          <p className="text-sm text-river dark:text-sky-200">{member.role}</p>
+                        </div>
                       </div>
                       <span className="rounded-full bg-coral/15 px-2.5 py-0.5 text-xs font-semibold text-coral dark:bg-coral/25 dark:text-orange-100">{member.id}</span>
                     </div>
@@ -1475,9 +1485,17 @@ export default function Homepage() {
                   aria-label={`${member.name} এর প্রোফাইল দেখুন`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <h5 className="font-semibold text-ink dark:text-white">{member.name}</h5>
-                      <p className="text-sm text-river dark:text-sky-200">{member.role}</p>
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <img
+                        src={member.photoUrl}
+                        alt={`${member.name} ছবি`}
+                        className="h-11 w-11 shrink-0 rounded-xl border border-ink/15 object-cover dark:border-white/20"
+                        loading="lazy"
+                      />
+                      <div className="min-w-0">
+                        <h5 className="truncate font-semibold text-ink dark:text-white">{member.name}</h5>
+                        <p className="text-sm text-river dark:text-sky-200">{member.role}</p>
+                      </div>
                     </div>
                     <span className="rounded-full bg-coral/15 px-2.5 py-0.5 text-xs font-semibold text-coral dark:bg-coral/25 dark:text-orange-100">{member.id}</span>
                   </div>
