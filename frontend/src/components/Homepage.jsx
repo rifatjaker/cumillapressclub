@@ -14,6 +14,7 @@ export default function Homepage() {
   const [activePhoto, setActivePhoto] = useState(null)
   const [activeProgramSlide, setActiveProgramSlide] = useState(0)
   const [memberQuery, setMemberQuery] = useState('')
+  const [deceasedPage, setDeceasedPage] = useState(1)
   const [isAllMembersModalOpen, setIsAllMembersModalOpen] = useState(false)
   const [membershipForm, setMembershipForm] = useState({
     type: 'new',
@@ -81,6 +82,7 @@ export default function Homepage() {
   })
   const normalizedMemberQuery = memberQuery.trim().toLowerCase()
   const hasMemberQuery = normalizedMemberQuery.length > 0
+  const deceasedMembersPerPage = 6
   const archiveItems = [
     {
       year: '১৯৬৮',
@@ -115,6 +117,11 @@ export default function Homepage() {
   const visibleFilteredMembers = hasMemberQuery
     ? filteredMembers.slice(0, 20)
     : filteredMembers.slice(0, 10)
+  const deceasedTotalPages = Math.max(1, Math.ceil(deceasedMembers.length / deceasedMembersPerPage))
+  const visibleDeceasedMembers = deceasedMembers.slice(
+    (deceasedPage - 1) * deceasedMembersPerPage,
+    deceasedPage * deceasedMembersPerPage
+  )
   const normalizedArchiveQuery = archiveQuery.trim().toLowerCase()
   const filteredArchiveItems = archiveItems.filter((item) => {
     if (!normalizedArchiveQuery) {
@@ -231,6 +238,10 @@ export default function Homepage() {
     event.preventDefault()
     setPressReleaseSubmitted(true)
   }
+
+  useEffect(() => {
+    setDeceasedPage((current) => Math.min(Math.max(current, 1), deceasedTotalPages))
+  }, [deceasedTotalPages])
 
   useEffect(() => {
     const el = categoryRef.current
@@ -1167,36 +1178,6 @@ export default function Homepage() {
             )}
           </div>
 
-          <div className="mt-4 rounded-2xl border border-ink/10 bg-white/80 p-3 dark:border-white/20 dark:bg-white/10">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-sm font-bold text-ink dark:text-white">প্রয়াত সদস্য</p>
-              <p className="text-xs font-semibold text-ink/60 dark:text-white/70">ছবি সহ স্মরণ তালিকা</p>
-            </div>
-
-            <div className="space-y-2">
-              {deceasedMembers.map((member) => (
-                <article
-                  key={`${member.name}-${member.tenure}`}
-                  className="flex items-center gap-3 rounded-xl border border-ink/10 bg-white p-2.5 dark:border-white/15 dark:bg-white/5"
-                >
-                  <img
-                    src={member.photoUrl || memberPlaceholderImage}
-                    alt={`${member.name} ছবি`}
-                    className="h-14 w-12 shrink-0 rounded-md border border-ink/15 object-cover dark:border-white/20"
-                    onError={(event) => {
-                      event.currentTarget.src = memberPlaceholderImage
-                    }}
-                    loading="lazy"
-                  />
-                  <div className="min-w-0">
-                    <h4 className="truncate text-sm font-semibold text-ink dark:text-white">{member.name}</h4>
-                    <p className="text-xs text-river dark:text-sky-200">{member.role}</p>
-                    <p className="text-xs text-ink/65 dark:text-white/70">সময়কাল: {member.tenure}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
         </div>
 
         <div className="rounded-3xl border border-ink/10 bg-gradient-to-br from-[#132432] via-[#1b3347] to-[#15323a] p-5 text-white shadow-card dark:border-white/20 lg:col-span-2">
@@ -1379,6 +1360,81 @@ export default function Homepage() {
               )}
             </article>
           </div>
+        </div>
+      </section>
+
+      <section id="deceased-members" className="mt-8 scroll-mt-24">
+        <div className="rounded-3xl border border-ink/10 bg-gradient-to-br from-[#fff9f3] via-[#f6fbff] to-[#f3fff8] p-5 shadow-card dark:border-white/20 dark:from-[#121f2c] dark:via-[#112635] dark:to-[#143428]">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="flex items-center gap-2 text-xl font-bold text-ink dark:text-white">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-coral/15 text-coral dark:bg-orange-200/20 dark:text-orange-100">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                    <path d="M12 4v16" />
+                    <path d="M5 11h14" />
+                    <path d="M8 20h8" />
+                  </svg>
+                </span>
+                প্রয়াত সদস্য
+              </h3>
+              <p className="mt-1 text-sm text-ink/75 dark:text-white/75">ছবি সহ স্মরণ তালিকা। দ্রুত লোডের জন্য পেইজভিত্তিক প্রদর্শন করা হচ্ছে।</p>
+            </div>
+            <span className="rounded-full border border-coral/30 bg-coral/10 px-3 py-1 text-xs font-semibold text-coral dark:border-orange-200/35 dark:bg-orange-200/10 dark:text-orange-100">
+              মোট: {deceasedMembers.length}
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 700px' }}>
+            {visibleDeceasedMembers.map((member) => (
+              <article
+                key={`${member.name}-${member.tenure}`}
+                className="flex items-center gap-3 rounded-xl border border-ink/10 bg-white p-3 dark:border-white/15 dark:bg-white/5"
+              >
+                <img
+                  src={member.photoUrl || memberPlaceholderImage}
+                  alt={`${member.name} ছবি`}
+                  className="h-16 w-14 shrink-0 rounded-md border border-ink/15 object-cover dark:border-white/20"
+                  onError={(event) => {
+                    event.currentTarget.src = memberPlaceholderImage
+                  }}
+                  loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
+                />
+                <div className="min-w-0">
+                  <h4 className="truncate text-sm font-semibold text-ink dark:text-white">{member.name}</h4>
+                  <p className="text-xs text-river dark:text-sky-200">{member.role}</p>
+                  <p className="text-xs text-ink/65 dark:text-white/70">সময়কাল: {member.tenure}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {deceasedTotalPages > 1 && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 bg-white/75 px-3 py-2 dark:border-white/15 dark:bg-white/10">
+              <p className="text-xs font-semibold text-ink/70 dark:text-white/75">
+                পেজ {deceasedPage} / {deceasedTotalPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeceasedPage((current) => Math.max(1, current - 1))}
+                  disabled={deceasedPage === 1}
+                  className="rounded-lg border border-ink/20 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                >
+                  পূর্বের
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeceasedPage((current) => Math.min(deceasedTotalPages, current + 1))}
+                  disabled={deceasedPage === deceasedTotalPages}
+                  className="rounded-lg border border-river/35 bg-river/10 px-3 py-1.5 text-xs font-semibold text-river transition hover:bg-river/15 disabled:cursor-not-allowed disabled:opacity-50 dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100 dark:hover:bg-sky-200/20"
+                >
+                  পরের
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
