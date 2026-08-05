@@ -4,6 +4,11 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Noto Serif Bengali"', 'serif'],
+        serif: ['"Noto Serif Bengali"', 'serif'],
+        display: ['"Noto Serif Bengali"', 'serif']
+      },
       colors: {
         ink: '#141321',
         coral: '#ff5f45',

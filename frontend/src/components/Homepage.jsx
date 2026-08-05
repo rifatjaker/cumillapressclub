@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { breakingNews, categories, committee, deceasedMembers, departmentsOverview, donorMembers, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, notices, organizationSpotlight, programSliderImages, upcomingEvents } from '../data/content'
 
 export default function Homepage() {
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
   const categoryRef = useRef(null)
   const mediaSliderRef = useRef(null)
   const [canScrollPrev, setCanScrollPrev] = useState(false)
@@ -44,7 +45,17 @@ export default function Homepage() {
     complaint: ''
   })
   const [complaintSubmitted, setComplaintSubmitted] = useState(false)
+  const [complaintError, setComplaintError] = useState('')
+  const [isComplaintSubmitting, setIsComplaintSubmitting] = useState(false)
+  const [liveBreakingNews, setLiveBreakingNews] = useState(breakingNews)
+  const [liveFeaturedNews, setLiveFeaturedNews] = useState(featuredNews)
+  const [liveNotices, setLiveNotices] = useState(notices)
+  const [liveUpcomingEvents, setLiveUpcomingEvents] = useState(upcomingEvents)
+  const [liveGalleryItems, setLiveGalleryItems] = useState(galleryItems)
+  const [liveProgramSlides, setLiveProgramSlides] = useState(programSliderImages)
   const [archiveQuery, setArchiveQuery] = useState('')
+  const primaryFeaturedNews = liveFeaturedNews[0] || featuredNews[0]
+  const secondaryFeaturedNews = liveFeaturedNews[1] || featuredNews[1] || primaryFeaturedNews
   const visibleHeroHighlights = heroHighlights.slice(0, 3)
   const hasMoreHeroHighlights = heroHighlights.length > 3
   const priorityLeadershipRoles = new Set(['সভাপতি', 'সাধারণ সম্পাদক'])
@@ -288,19 +299,19 @@ export default function Homepage() {
   }
 
   const showNextProgramSlide = () => {
-    if (programSliderImages.length === 0) {
+    if (liveProgramSlides.length === 0) {
       return
     }
 
-    setActiveProgramSlide((current) => (current + 1) % programSliderImages.length)
+    setActiveProgramSlide((current) => (current + 1) % liveProgramSlides.length)
   }
 
   const showPrevProgramSlide = () => {
-    if (programSliderImages.length === 0) {
+    if (liveProgramSlides.length === 0) {
       return
     }
 
-    setActiveProgramSlide((current) => (current - 1 + programSliderImages.length) % programSliderImages.length)
+    setActiveProgramSlide((current) => (current - 1 + liveProgramSlides.length) % liveProgramSlides.length)
   }
 
   const handleMembershipSubmit = (event) => {
@@ -320,21 +331,287 @@ export default function Homepage() {
     setPressReleaseSubmitted(true)
   }
 
-  const handleComplaintSubmit = (event) => {
+  const handleComplaintSubmit = async (event) => {
     event.preventDefault()
+    setComplaintSubmitted(false)
+    setComplaintError('')
+    setIsComplaintSubmitting(true)
 
-    const subject = encodeURIComponent(`অভিযোগ - ${complaintForm.name || 'অজ্ঞাত'}`)
-    const body = encodeURIComponent(
-      `প্রাপক: কুমিল্লা প্রেস ক্লাব\n` +
-      `নাম: ${complaintForm.name}\n` +
-      `মোবাইল: ${complaintForm.phone}\n` +
-      `ঠিকানা: ${complaintForm.address}\n\n` +
-      `অভিযোগের বিস্তারিত:\n${complaintForm.complaint}`
-    )
+    try {
+      const apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
+      const response = await fetch(`${apiBase}/api/v1/complaints`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(complaintForm)
+      })
 
-    window.location.href = `mailto:cumillapressclub1964@gmail.com?subject=${subject}&body=${body}`
-    setComplaintSubmitted(true)
+      const result = await response.json().catch(() => ({}))
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'অভিযোগ পাঠানো সম্ভব হয়নি।')
+      }
+
+      setComplaintSubmitted(true)
+      setComplaintForm({
+        name: '',
+        phone: '',
+        address: '',
+        complaint: ''
+      })
+    } catch (error) {
+      setComplaintError(error instanceof Error ? error.message : 'সার্ভার সংযোগে সমস্যা হয়েছে।')
+    } finally {
+      setIsComplaintSubmitting(false)
+    }
   }
+
+  useEffect(() => {
+    const loadBreakingNews = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/contents/breaking_news`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          return
+        }
+
+        const headlines = result.data
+          .map((item) => (item.title || item.body || '').trim())
+          .filter(Boolean)
+
+        if (headlines.length > 0) {
+          setLiveBreakingNews(headlines)
+        }
+      } catch {
+        // Fallback to static headlines if backend is unavailable.
+      }
+    }
+
+    loadBreakingNews()
+  }, [apiBase])
+
+  useEffect(() => {
+    const loadFeaturedNews = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/contents/featured_news`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          return
+        }
+
+        const normalized = result.data
+          .map((item) => ({
+            title: (item.title || '').trim(),
+            summary: (item.body || '').trim(),
+            category: 'ফিচার্ড'
+          }))
+          .filter((item) => item.title && item.summary)
+
+        if (normalized.length > 0) {
+          setLiveFeaturedNews(normalized)
+        }
+      } catch {
+        // Keep static featured news if backend is unavailable.
+      }
+    }
+
+    loadFeaturedNews()
+  }, [apiBase])
+
+  useEffect(() => {
+    const parseEventBody = (body) => {
+      const rawBody = (body || '').trim()
+
+      if (!rawBody) {
+        return { date: '', time: '', venue: '' }
+      }
+
+      try {
+        const parsed = JSON.parse(rawBody)
+        if (parsed && typeof parsed === 'object') {
+          return {
+            date: String(parsed.date || '').trim(),
+            time: String(parsed.time || '').trim(),
+            venue: String(parsed.venue || '').trim()
+          }
+        }
+      } catch {
+        // Fall back to line-based parsing.
+      }
+
+      const lines = rawBody
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+
+      return {
+        date: lines[0] || '',
+        time: lines[1] || '',
+        venue: lines.slice(2).join(' ') || ''
+      }
+    }
+
+    const loadNoticesAndEvents = async () => {
+      try {
+        const [noticesResponse, eventsResponse] = await Promise.all([
+          fetch(`${apiBase}/api/v1/contents/notices`),
+          fetch(`${apiBase}/api/v1/contents/upcoming_events`)
+        ])
+
+        const noticesResult = await noticesResponse.json().catch(() => ({}))
+        const eventsResult = await eventsResponse.json().catch(() => ({}))
+
+        if (noticesResponse.ok && noticesResult.success && Array.isArray(noticesResult.data)) {
+          const normalizedNotices = noticesResult.data
+            .map((item) => {
+              const bodyDate = (item.body || '')
+                .split('\n')
+                .map((line) => line.trim())
+                .find(Boolean) || ''
+
+              const publishDate = bodyDate || item.updated_at || item.created_at || ''
+
+              return {
+                title: (item.title || '').trim(),
+                date: publishDate,
+                file: '#'
+              }
+            })
+            .filter((item) => item.title)
+
+          if (normalizedNotices.length > 0) {
+            setLiveNotices(normalizedNotices)
+          }
+        }
+
+        if (eventsResponse.ok && eventsResult.success && Array.isArray(eventsResult.data)) {
+          const normalizedEvents = eventsResult.data
+            .map((item) => {
+              const parsedBody = parseEventBody(item.body)
+              return {
+                title: (item.title || '').trim(),
+                date: parsedBody.date,
+                time: parsedBody.time,
+                venue: parsedBody.venue
+              }
+            })
+            .filter((item) => item.title)
+
+          if (normalizedEvents.length > 0) {
+            setLiveUpcomingEvents(normalizedEvents)
+          }
+        }
+      } catch {
+        // Keep static notices/events if backend is unavailable.
+      }
+    }
+
+    loadNoticesAndEvents()
+  }, [apiBase])
+
+  useEffect(() => {
+    const loadProgramSlides = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/slider-items`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          return
+        }
+
+        const normalizedSlides = result.data
+          .map((item) => ({
+            title: item.title,
+            date: item.date,
+            imageUrl: item.imageUrl
+          }))
+          .filter((item) => item.title && item.imageUrl)
+
+        if (normalizedSlides.length > 0) {
+          setLiveProgramSlides(normalizedSlides)
+          setActiveProgramSlide(0)
+        }
+      } catch {
+        // Keep static slides if backend is unavailable.
+      }
+    }
+
+    loadProgramSlides()
+  }, [apiBase])
+
+  useEffect(() => {
+    const parseGalleryBody = (body) => {
+      const rawBody = (body || '').trim()
+
+      if (!rawBody) {
+        return {
+          type: '',
+          imageUrl: '',
+          youtubeUrl: ''
+        }
+      }
+
+      try {
+        const parsed = JSON.parse(rawBody)
+        if (parsed && typeof parsed === 'object') {
+          return {
+            type: String(parsed.type || '').trim(),
+            imageUrl: String(parsed.imageUrl || '').trim(),
+            youtubeUrl: String(parsed.youtubeUrl || '').trim()
+          }
+        }
+      } catch {
+        // Fall back to line-based parsing.
+      }
+
+      const lines = rawBody
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+
+      return {
+        type: lines[0] || '',
+        imageUrl: lines[1] || '',
+        youtubeUrl: lines[2] || ''
+      }
+    }
+
+    const loadGalleryItems = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/contents/media_gallery`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          return
+        }
+
+        const normalizedItems = result.data
+          .map((item) => {
+            const parsed = parseGalleryBody(item.body)
+            const type = (parsed.type || 'Photo').trim() || 'Photo'
+
+            return {
+              title: (item.title || '').trim(),
+              type,
+              imageUrl: parsed.imageUrl,
+              youtubeUrl: parsed.youtubeUrl
+            }
+          })
+          .filter((item) => item.title && item.imageUrl)
+
+        if (normalizedItems.length > 0) {
+          setLiveGalleryItems(normalizedItems)
+        }
+      } catch {
+        // Keep static media items if backend is unavailable.
+      }
+    }
+
+    loadGalleryItems()
+  }, [apiBase])
 
   useEffect(() => {
     setDeceasedPage((current) => Math.min(Math.max(current, 1), deceasedTotalPages))
@@ -449,16 +726,16 @@ export default function Homepage() {
   }, [isAllMembersModalOpen])
 
   useEffect(() => {
-    if (programSliderImages.length < 2) {
+    if (liveProgramSlides.length < 2) {
       return
     }
 
     const intervalId = window.setInterval(() => {
-      setActiveProgramSlide((current) => (current + 1) % programSliderImages.length)
+      setActiveProgramSlide((current) => (current + 1) % liveProgramSlides.length)
     }, 5500)
 
     return () => window.clearInterval(intervalId)
-  }, [])
+  }, [liveProgramSlides])
 
   const scrollCategories = (direction) => {
     const el = categoryRef.current
@@ -481,7 +758,7 @@ export default function Homepage() {
   }
 
   const breakingCards = (suffix) =>
-    breakingNews.map((headline, index) => (
+    liveBreakingNews.map((headline, index) => (
       <a key={`${suffix}-${index}`} href="#news-notices" className="breaking-mini-item">
         <span className="breaking-mini-item__title">{headline}</span>
       </a>
@@ -546,7 +823,7 @@ export default function Homepage() {
       <section className="mt-4 overflow-hidden rounded-3xl border border-ink/10 bg-white p-2 shadow-card dark:border-white/20 dark:bg-white/10 sm:p-3">
         <div className="relative overflow-hidden rounded-2xl">
           <div className="relative h-[220px] sm:h-[260px] lg:h-[300px]">
-            {programSliderImages.map((slide, index) => (
+            {liveProgramSlides.map((slide, index) => (
               <article
                 key={`${slide.title}-${index}`}
                 className={`absolute inset-0 transition-opacity duration-700 ${activeProgramSlide === index ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
@@ -593,7 +870,7 @@ export default function Homepage() {
           </button>
 
           <div className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-black/35 px-2 py-1 backdrop-blur-sm">
-            {programSliderImages.map((slide, index) => (
+            {liveProgramSlides.map((slide, index) => (
               <button
                 key={`${slide.title}-dot`}
                 type="button"
@@ -628,8 +905,8 @@ export default function Homepage() {
                 <span className="rounded-full bg-[#f4e9d7]/16 px-2.5 py-1 font-semibold text-[#fff7ec]">কুমিল্লা</span>
                 <span className="rounded-full bg-[#f4e9d7]/16 px-2.5 py-1 font-semibold text-[#fff7ec]">সারাদেশ</span>
               </div>
-              <h2 className="mt-3 font-display text-3xl font-bold leading-tight">{featuredNews[0].title}</h2>
-              <p className="mt-3 text-[#fff2df]">{featuredNews[0].summary}</p>
+              <h2 className="mt-3 font-display text-3xl font-bold leading-tight">{primaryFeaturedNews?.title}</h2>
+              <p className="mt-3 text-[#fff2df]">{primaryFeaturedNews?.summary}</p>
               <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[#fff0dd]">
                 <span className="rounded-full border border-[#f4e9d7]/35 px-2.5 py-1">প্রধান শিরোনাম</span>
                 <span className="rounded-full border border-[#f4e9d7]/35 px-2.5 py-1">সর্বশেষ আপডেট</span>
@@ -676,8 +953,8 @@ export default function Homepage() {
 
           <div className="mt-5 rounded-2xl border border-[#f4e9d7]/30 bg-[#f4e9d7]/10 p-4">
             <p className="text-xs font-semibold tracking-wide text-mint">ট্রেন্ডিং এখন</p>
-            <h3 className="mt-1 text-lg font-bold leading-snug">{featuredNews[1].title}</h3>
-            <p className="mt-1 text-sm text-[#f8ead6]">{featuredNews[1].summary}</p>
+            <h3 className="mt-1 text-lg font-bold leading-snug">{secondaryFeaturedNews?.title}</h3>
+            <p className="mt-1 text-sm text-[#f8ead6]">{secondaryFeaturedNews?.summary}</p>
           </div>
 
           <div className="topic-strip mt-8" aria-label="আলোচিত বিষয়">
@@ -731,7 +1008,7 @@ export default function Homepage() {
           </div>
 
           <div className="mt-4 space-y-3">
-            {notices.map((notice, index) => (
+            {liveNotices.map((notice, index) => (
               <div key={notice.title} className="rounded-xl border border-ink/10 bg-ink/5 p-3 dark:border-white/20 dark:bg-white/5">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-semibold leading-snug text-ink dark:text-white">{notice.title}</p>
@@ -779,7 +1056,7 @@ export default function Homepage() {
             </div>
 
             <div className="mt-3 space-y-2">
-              {upcomingEvents.map((eventItem) => (
+              {liveUpcomingEvents.map((eventItem) => (
                 <div key={eventItem.title} className="rounded-xl border border-ink/10 bg-white/80 p-2.5 dark:border-white/20 dark:bg-white/5">
                   <p className="text-sm font-semibold text-ink dark:text-white">{eventItem.title}</p>
                   <p className="mt-0.5 text-xs text-ink/70 dark:text-white/70">{eventItem.date} • {eventItem.time}</p>
@@ -1094,7 +1371,7 @@ export default function Homepage() {
 
         <div className="relative mt-5">
           <div ref={mediaSliderRef} className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth pb-1 pr-1">
-          {galleryItems.map((item, index) => (
+          {liveGalleryItems.map((item, index) => (
             <article
               key={item.title}
               className={`group min-w-[250px] flex-none overflow-hidden rounded-2xl border border-white/60 bg-white/70 p-3 shadow-sm backdrop-blur-sm transition duration-300 sm:min-w-[280px] lg:min-w-[285px] dark:border-white/20 dark:bg-white/10 ${(item.type.toLowerCase() === 'video' || item.type.toLowerCase() === 'photo') ? 'cursor-pointer hover:-translate-y-1 hover:shadow-xl' : ''}`}
@@ -1467,7 +1744,7 @@ export default function Homepage() {
                 অভিযোগ বক্স
               </h4>
               <p className="mt-1 text-xs text-white/75">
-                কুমিল্লা প্রেস ক্লাব বরাবর আপনার অভিযোগ পাঠান। সাবমিট করলে মেইল ক্লায়েন্ট খুলে যাবে।
+                কুমিল্লা প্রেসক্লাব বরাবর আপনার অভিযোগ পাঠান। সাবমিট করলে অভিযোগটি সরাসরি সার্ভার থেকে ইমেইলে যাবে।
               </p>
               <form className="mt-2 space-y-2" onSubmit={handleComplaintSubmit}>
                 <input
@@ -1499,13 +1776,22 @@ export default function Homepage() {
                   required
                   className="w-full resize-none rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
                 />
-                <button type="submit" className="w-full rounded-lg bg-coral px-3 py-2 text-sm font-semibold text-white transition hover:brightness-110">
-                  অভিযোগ পাঠান
+                <button
+                  type="submit"
+                  disabled={isComplaintSubmitting}
+                  className="w-full rounded-lg bg-coral px-3 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isComplaintSubmitting ? 'পাঠানো হচ্ছে...' : 'অভিযোগ পাঠান'}
                 </button>
               </form>
               {complaintSubmitted && (
                 <p className="mt-2 rounded-lg border border-emerald-300/35 bg-emerald-300/15 px-3 py-2 text-xs text-emerald-100">
-                  আপনার অভিযোগের ড্রাফট মেইল প্রস্তুত হয়েছে: cumillapressclub1964@gmail.com
+                  আপনার অভিযোগ সফলভাবে পাঠানো হয়েছে: cumillapressclub1964@gmail.com
+                </p>
+              )}
+              {complaintError && (
+                <p className="mt-2 rounded-lg border border-rose-300/35 bg-rose-300/15 px-3 py-2 text-xs text-rose-100">
+                  {complaintError}
                 </p>
               )}
             </article>
