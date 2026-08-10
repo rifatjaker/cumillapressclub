@@ -3,7 +3,7 @@ export const navItems = [
   { label: 'আমাদের সম্পর্কে', icon: 'about', href: '#about' },
   { label: 'নির্বাহী কমিটি', icon: 'committee', href: '#committee' },
   { label: 'সদস্য তালিকা', icon: 'members', href: '#members' },
-  { label: 'দাতা সদস্য', icon: 'members', href: '#donor-members' },
+  { label: 'প্রাথমিক সদস্য', icon: 'members', href: '#donor-members' },
   { label: 'সংবাদ ও নোটিশ', icon: 'news', href: '#news-notices' },
   { label: 'মিডিয়া গ্যালারি', icon: 'gallery', href: '#media-gallery' },
   { label: 'যোগাযোগ', icon: 'contact', href: '#contact' }
@@ -188,49 +188,49 @@ export const deceasedMembers = [
 export const donorMembers = [
   {
     name: 'আব্দুর রহমান সুমন',
-    role: 'দাতা সদস্য',
+    role: 'প্রাথমিক সদস্য',
     tenure: '২০২০ - বর্তমান',
     contribution: 'সাংবাদিক কল্যাণ তহবিলে বার্ষিক অনুদান।',
     photoUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=500&q=80'
   },
   {
     name: 'রোকসানা পারভীন',
-    role: 'দাতা সদস্য',
+    role: 'প্রাথমিক সদস্য',
     tenure: '২০১৯ - বর্তমান',
     contribution: 'প্রশিক্ষণ কর্মশালা ও নারী সাংবাদিক উন্নয়ন উদ্যোগে সহায়তা।',
     photoUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=500&q=80'
   },
   {
     name: 'ইঞ্জি. মাহবুবুর করিম',
-    role: 'দাতা সদস্য',
+    role: 'প্রাথমিক সদস্য',
     tenure: '২০১৮ - বর্তমান',
     contribution: 'প্রেস ক্লাব লাইব্রেরি আধুনিকায়নে অনুদান।',
     photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=500&q=80'
   },
   {
     name: 'তানিয়া সুলতানা',
-    role: 'দাতা সদস্য',
+    role: 'প্রাথমিক সদস্য',
     tenure: '২০২১ - বর্তমান',
     contribution: 'মিডিয়া শিক্ষার্থীদের জন্য স্কলারশিপ সহায়তা।',
     photoUrl: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=500&q=80'
   },
   {
     name: 'মো. সাজ্জাদ হোসেন',
-    role: 'দাতা সদস্য',
+    role: 'প্রাথমিক সদস্য',
     tenure: '২০১৭ - বর্তমান',
     contribution: 'জরুরি স্বাস্থ্য সহায়তা তহবিলে অনুদান।',
     photoUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=500&q=80'
   },
   {
     name: 'আয়েশা নাজনীন',
-    role: 'দাতা সদস্য',
+    role: 'প্রাথমিক সদস্য',
     tenure: '২০২২ - বর্তমান',
     contribution: 'সাংবাদিকতা গবেষণা প্রকাশনায় পৃষ্ঠপোষকতা।',
     photoUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=500&q=80'
   },
   {
     name: 'হুমায়ুন কবীর রনি',
-    role: 'দাতা সদস্য',
+    role: 'প্রাথমিক সদস্য',
     tenure: '২০১৬ - বর্তমান',
     contribution: 'প্রেস ক্লাব ভবন রক্ষণাবেক্ষণে সহায়তা।',
     photoUrl: 'https://images.unsplash.com/photo-1521119989659-a83eee488004?auto=format&fit=crop&w=500&q=80'

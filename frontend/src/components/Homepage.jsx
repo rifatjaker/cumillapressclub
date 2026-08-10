@@ -1320,6 +1320,16 @@ export default function Homepage() {
         </div>
       </section>
 
+      <aside
+        className="relative left-1/2 mt-8 w-[100dvw] max-w-[100dvw] -translate-x-1/2 bg-gradient-to-r from-coral to-river px-4 py-5 text-white sm:px-6"
+        aria-label="স্পনসরড ব্যানার"
+      >
+        <div className="mx-auto w-full max-w-[1200px]">
+          <p className="text-xs uppercase tracking-widest">Sponsored Banner</p>
+          <p className="mt-1 text-lg font-semibold sm:text-xl">জাতীয় উন্নয়ন ও স্থানীয় উদ্যোগের পাশে</p>
+        </div>
+      </aside>
+
       <section
         id="media-gallery"
         className="relative mt-8 scroll-mt-24 overflow-hidden rounded-3xl border border-ink/10 bg-gradient-to-br from-[#fff7ef] via-[#eef7ff] to-[#e7fff3] p-5 shadow-card dark:border-white/20 dark:from-[#0f1d2b] dark:via-[#11283c] dark:to-[#143226]"
@@ -1963,9 +1973,9 @@ export default function Homepage() {
                     <path d="M16.5 7.5 7.5 16.5" />
                   </svg>
                 </span>
-                দাতা সদস্য
+                প্রাথমিক সদস্য
               </h3>
-              <p className="mt-1 text-sm text-ink/75 dark:text-white/75">ছবি সহ দাতা সদস্য তালিকা</p>
+              <p className="mt-1 text-sm text-ink/75 dark:text-white/75">ছবি সহ প্রাথমিক সদস্য তালিকা</p>
             </div>
             <span className="rounded-full border border-river/30 bg-river/10 px-3 py-1 text-xs font-semibold text-river dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100">
               মোট: {donorMembers.length}
@@ -2102,9 +2112,19 @@ export default function Homepage() {
         </div>
       </section>
 
+      <aside
+        className="relative left-1/2 mt-10 w-[100dvw] max-w-[100dvw] -translate-x-1/2 bg-gradient-to-r from-coral to-river px-4 py-5 text-white sm:px-6"
+        aria-label="স্পনসরড ব্যানার"
+      >
+        <div className="mx-auto w-full max-w-[1200px]">
+          <p className="text-xs uppercase tracking-widest">Sponsored Banner</p>
+          <p className="mt-1 text-lg font-semibold sm:text-xl">জাতীয় উন্নয়ন ও স্থানীয় উদ্যোগের পাশে</p>
+        </div>
+      </aside>
+
       <footer
         id="contact"
-        className="relative left-1/2 mt-10 w-[100dvw] max-w-[100dvw] -translate-x-1/2 scroll-mt-24 overflow-hidden border-y border-white/10 bg-gradient-to-br from-[#091722] via-[#0e2536] to-[#173844] px-3 py-8 text-white shadow-card sm:px-4"
+        className="relative left-1/2 mt-0 w-[100dvw] max-w-[100dvw] -translate-x-1/2 scroll-mt-24 overflow-hidden border-y border-white/10 bg-gradient-to-br from-[#091722] via-[#0e2536] to-[#173844] px-3 py-8 text-white shadow-card sm:px-4"
       >
         <div className="pointer-events-none absolute -left-20 -top-20 h-52 w-52 rounded-full bg-coral/20 blur-3xl" aria-hidden="true" />
         <div className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-mint/10 blur-3xl" aria-hidden="true" />
@@ -2371,7 +2391,7 @@ export default function Homepage() {
             onClick={(event) => event.stopPropagation()}
             role="dialog"
             aria-modal="true"
-            aria-label="দাতা সদস্য প্রোফাইল"
+            aria-label="প্রাথমিক সদস্য প্রোফাইল"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -2397,7 +2417,7 @@ export default function Homepage() {
                 type="button"
                 onClick={closeDonorProfileModal}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-ink/20 text-ink/70 transition hover:bg-ink/5 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/10"
-                aria-label="দাতা সদস্য প্রোফাইল বন্ধ করুন"
+                aria-label="প্রাথমিক সদস্য প্রোফাইল বন্ধ করুন"
               >
                 ✕
               </button>
