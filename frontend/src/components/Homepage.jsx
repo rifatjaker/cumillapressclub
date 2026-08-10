@@ -1321,13 +1321,11 @@ export default function Homepage() {
       </section>
 
       <aside
-        className="relative left-1/2 mt-8 w-[100dvw] max-w-[100dvw] -translate-x-1/2 bg-gradient-to-r from-coral to-river px-4 py-5 text-white sm:px-6"
+        className="mt-8 w-full rounded-2xl bg-gradient-to-r from-coral to-river px-6 py-5 text-white"
         aria-label="স্পনসরড ব্যানার"
       >
-        <div className="mx-auto w-full max-w-[1200px]">
-          <p className="text-xs uppercase tracking-widest">Sponsored Banner</p>
-          <p className="mt-1 text-lg font-semibold sm:text-xl">জাতীয় উন্নয়ন ও স্থানীয় উদ্যোগের পাশে</p>
-        </div>
+        <p className="text-xs uppercase tracking-widest">Sponsored Banner</p>
+        <p className="mt-1 text-lg font-semibold sm:text-xl">জাতীয় উন্নয়ন ও স্থানীয় উদ্যোগের পাশে</p>
       </aside>
 
       <section
@@ -2113,13 +2111,11 @@ export default function Homepage() {
       </section>
 
       <aside
-        className="relative left-1/2 mt-10 w-[100dvw] max-w-[100dvw] -translate-x-1/2 bg-gradient-to-r from-coral to-river px-4 py-5 text-white sm:px-6"
+        className="mt-10 mb-8 w-full rounded-2xl bg-gradient-to-r from-coral to-river px-6 py-5 text-white"
         aria-label="স্পনসরড ব্যানার"
       >
-        <div className="mx-auto w-full max-w-[1200px]">
-          <p className="text-xs uppercase tracking-widest">Sponsored Banner</p>
-          <p className="mt-1 text-lg font-semibold sm:text-xl">জাতীয় উন্নয়ন ও স্থানীয় উদ্যোগের পাশে</p>
-        </div>
+        <p className="text-xs uppercase tracking-widest">Sponsored Banner</p>
+        <p className="mt-1 text-lg font-semibold sm:text-xl">জাতীয় উন্নয়ন ও স্থানীয় উদ্যোগের পাশে</p>
       </aside>
 
       <footer
