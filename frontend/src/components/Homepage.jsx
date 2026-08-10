@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { breakingNews, categories, committee, deceasedMembers, departmentsOverview, donorMembers, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, notices, organizationSpotlight, programSliderImages, upcomingEvents } from '../data/content'
+import { breakingNews, categories, committee, deceasedMembers, departmentsOverview, donorMembers, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, localNewspaperLinks, notices, organizationSpotlight, programSliderImages, upcomingEvents } from '../data/content'
 
-export default function Homepage() {
+export default function Homepage({ pageSettings }) {
   const apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
   const categoryRef = useRef(null)
   const mediaSliderRef = useRef(null)
@@ -13,6 +13,8 @@ export default function Homepage() {
   const [selectedProfileGroup, setSelectedProfileGroup] = useState('')
   const [selectedDeceasedMember, setSelectedDeceasedMember] = useState(null)
   const [selectedDonorMember, setSelectedDonorMember] = useState(null)
+  const [selectedNotice, setSelectedNotice] = useState(null)
+  const [eventCountdown, setEventCountdown] = useState({ days: 0, hours: 0, minutes: 0 })
   const [activeVideo, setActiveVideo] = useState(null)
   const [activePhoto, setActivePhoto] = useState(null)
   const [activeProgramSlide, setActiveProgramSlide] = useState(0)
@@ -53,58 +55,10 @@ export default function Homepage() {
   const [liveUpcomingEvents, setLiveUpcomingEvents] = useState(upcomingEvents)
   const [liveGalleryItems, setLiveGalleryItems] = useState(galleryItems)
   const [liveProgramSlides, setLiveProgramSlides] = useState(programSliderImages)
-  const [archiveQuery, setArchiveQuery] = useState('')
-  const primaryFeaturedNews = liveFeaturedNews[0] || featuredNews[0]
-  const secondaryFeaturedNews = liveFeaturedNews[1] || featuredNews[1] || primaryFeaturedNews
-  const visibleHeroHighlights = heroHighlights.slice(0, 3)
-  const hasMoreHeroHighlights = heroHighlights.length > 3
-  const priorityLeadershipRoles = new Set(['সভাপতি', 'সাধারণ সম্পাদক'])
-  const visibleLeadershipProfiles = leadershipProfiles.filter((leader) => priorityLeadershipRoles.has(leader.role))
-  const hasMoreLeadershipProfiles = leadershipProfiles.some((leader) => !priorityLeadershipRoles.has(leader.role))
-  const visibleCommittee = committee.slice(0, 4)
-  const hasMoreCommittee = committee.length > 4
-  const siteLogo = `${import.meta.env.BASE_URL}logo.jpg`
-  const memberPlaceholderImage = `${import.meta.env.BASE_URL}member-placeholder.png`
-  const memberDirectory = [
-    ...leadershipProfiles.map((person, index) => ({
-      id: `CPC-L-${String(index + 1).padStart(3, '0')}`,
-      name: person.name,
-      role: person.role,
-      media: person.media || 'কুমিল্লা প্রেস ক্লাব',
-      phone: person.phone,
-      photoUrl: person.photoUrl || memberPlaceholderImage,
-      group: 'leadership',
-      profile: person
-    })),
-    ...committee.map((person, index) => ({
-      id: `CPC-M-${String(index + 1).padStart(3, '0')}`,
-      name: person.name,
-      role: person.role,
-      media: person.media,
-      phone: person.phone,
-      photoUrl: person.photoUrl || memberPlaceholderImage,
-      group: 'committee',
-      profile: person
-    }))
-  ]
-  const designationRank = {
-    সভাপতি: 1,
-    'সাধারণ সম্পাদক': 2,
-    'যুগ্ম সম্পাদক': 3,
-    'সাংগঠনিক সম্পাদক': 4
-  }
-  const membersByDesignation = [...memberDirectory].sort((a, b) => {
-    const rankDiff = (designationRank[a.role] || 999) - (designationRank[b.role] || 999)
-    if (rankDiff !== 0) {
-      return rankDiff
-    }
-
-    return a.role.localeCompare(b.role, 'bn') || a.name.localeCompare(b.name, 'bn')
-  })
-  const normalizedMemberQuery = memberQuery.trim().toLowerCase()
-  const hasMemberQuery = normalizedMemberQuery.length > 0
-  const deceasedMembersPerPage = 6
-  const archiveItems = [
+  const [liveLeadershipProfiles, setLiveLeadershipProfiles] = useState(leadershipProfiles)
+  const [liveCommittee, setLiveCommittee] = useState(committee)
+  const [liveRegisteredMembers, setLiveRegisteredMembers] = useState([])
+  const [liveArchiveItems, setLiveArchiveItems] = useState([
     {
       year: '১৯৬৮',
       title: 'কুমিল্লা বার্তা: স্বাধীনতা-পূর্ব বিশেষ সংখ্যা',
@@ -129,7 +83,97 @@ export default function Homepage() {
       type: 'আর্কাইভ ডকুমেন্ট',
       url: '#'
     }
+  ])
+  const [liveDeceasedMembers, setLiveDeceasedMembers] = useState(deceasedMembers)
+  const [livePrimaryMembers, setLivePrimaryMembers] = useState(donorMembers)
+  const [archiveQuery, setArchiveQuery] = useState('')
+  const primaryFeaturedNews = liveFeaturedNews[0] || featuredNews[0]
+  const secondaryFeaturedNews = liveFeaturedNews[1] || featuredNews[1] || primaryFeaturedNews
+  const visibleHeroHighlights = heroHighlights.slice(0, 3)
+  const hasMoreHeroHighlights = heroHighlights.length > 3
+  const visibleLeadershipProfiles = liveLeadershipProfiles
+  const hasMoreLeadershipProfiles = false
+  const visibleCommittee = liveCommittee
+  const hasMoreCommittee = false
+  const siteLogo = pageSettings?.logo_url || `${import.meta.env.BASE_URL}logo.jpg`
+  const siteName = pageSettings?.site_name || 'কুমিল্লা প্রেস ক্লাব'
+  const contactAddress = pageSettings?.address || 'কুমিল্লা প্রেস ক্লাব, কুমিল্লা শহর, বাংলাদেশ'
+  const contactPhone = pageSettings?.phone || '+8801XXXXXXXXX'
+  const contactEmail = pageSettings?.email || 'info@cumillapressclub.org'
+  const mapEmbedUrl = pageSettings?.map_embed_url || 'https://www.google.com/maps?q=Comilla%20Bangladesh&output=embed'
+  const facebookUrl = pageSettings?.facebook_url || 'https://www.facebook.com/share/19Dr5t8wkK/'
+  const youtubeUrl = pageSettings?.youtube_url || 'https://www.youtube.com'
+  const twitterUrl = pageSettings?.twitter_url || 'https://x.com'
+  const creditLine1 = pageSettings?.credit_line1 || 'সার্বিক পরিকল্পনা ও বাস্তবায়নে: মো: আসিফ হোসাইন মান্না'
+  const creditLine2 = pageSettings?.credit_line2 || 'বিজ্ঞান,তথ্য প্রযুক্তি ও গবেষণা সম্পাদক'
+  const creditLine3 = pageSettings?.credit_line3 || 'কুমিল্লা প্রেসক্লাব'
+  const footerImportantLinks = Array.isArray(pageSettings?.important_links) && pageSettings.important_links.length > 0
+    ? pageSettings.important_links
+    : importantLinks
+  const footerLocalNewspaperLinks = Array.isArray(pageSettings?.local_newspaper_links) && pageSettings.local_newspaper_links.length > 0
+    ? pageSettings.local_newspaper_links
+    : localNewspaperLinks
+  const memberPlaceholderImage = `${import.meta.env.BASE_URL}member-placeholder.png`
+  const fallbackMemberDirectory = [
+    ...liveLeadershipProfiles.map((person, index) => ({
+      id: `CPC-L-${String(index + 1).padStart(3, '0')}`,
+      name: person.name,
+      role: person.role,
+      media: person.media || 'কুমিল্লা প্রেস ক্লাব',
+      phone: person.phone,
+      photoUrl: person.photoUrl || memberPlaceholderImage,
+      group: 'leadership',
+      profile: person
+    })),
+    ...liveCommittee.map((person, index) => ({
+      id: `CPC-M-${String(index + 1).padStart(3, '0')}`,
+      name: person.name,
+      role: person.role,
+      media: person.media,
+      phone: person.phone,
+      photoUrl: person.photoUrl || memberPlaceholderImage,
+      group: 'committee',
+      profile: person
+    }))
   ]
+  const registeredMemberDirectory = liveRegisteredMembers.map((person) => ({
+    id: person.member_code,
+    name: person.name,
+    role: person.designation,
+    media: person.media_house,
+    phone: person.phone,
+    email: person.email,
+    photoUrl: person.photoUrl || memberPlaceholderImage,
+    group: 'member',
+    profile: {
+      name: person.name,
+      role: person.designation,
+      media: person.media_house,
+      phone: person.phone,
+      email: person.email,
+      photoUrl: person.photoUrl || memberPlaceholderImage,
+      message: `সদস্য আইডি: ${person.member_code}`
+    }
+  }))
+  const memberDirectory = registeredMemberDirectory.length > 0 ? registeredMemberDirectory : fallbackMemberDirectory
+  const designationRank = {
+    সভাপতি: 1,
+    'সাধারণ সম্পাদক': 2,
+    'যুগ্ম সম্পাদক': 3,
+    'সাংগঠনিক সম্পাদক': 4
+  }
+  const membersByDesignation = [...memberDirectory].sort((a, b) => {
+    const rankDiff = (designationRank[a.role] || 999) - (designationRank[b.role] || 999)
+    if (rankDiff !== 0) {
+      return rankDiff
+    }
+
+    return a.role.localeCompare(b.role, 'bn') || a.name.localeCompare(b.name, 'bn')
+  })
+  const normalizedMemberQuery = memberQuery.trim().toLowerCase()
+  const hasMemberQuery = normalizedMemberQuery.length > 0
+  const deceasedMembersPerPage = 6
+  const donorMembersPerPage = 3
   const filteredMembers = hasMemberQuery
     ? membersByDesignation.filter((member) => [member.name, member.id, member.role, member.media]
       .filter(Boolean)
@@ -138,7 +182,7 @@ export default function Homepage() {
   const visibleFilteredMembers = hasMemberQuery
     ? filteredMembers.slice(0, 20)
     : filteredMembers.slice(0, 10)
-  const deceasedTotalPages = Math.max(1, Math.ceil(deceasedMembers.length / deceasedMembersPerPage))
+  const deceasedTotalPages = Math.max(1, Math.ceil(liveDeceasedMembers.length / deceasedMembersPerPage))
   const deceasedPageNumbers = Array.from({ length: deceasedTotalPages }, (_, index) => index + 1)
   const deceasedCompactPageItems = (() => {
     if (deceasedTotalPages <= 5) {
@@ -164,11 +208,11 @@ export default function Homepage() {
     items.push(deceasedTotalPages)
     return items
   })()
-  const visibleDeceasedMembers = deceasedMembers.slice(
+  const visibleDeceasedMembers = liveDeceasedMembers.slice(
     (deceasedPage - 1) * deceasedMembersPerPage,
     deceasedPage * deceasedMembersPerPage
   )
-  const donorTotalPages = Math.max(1, Math.ceil(donorMembers.length / deceasedMembersPerPage))
+  const donorTotalPages = Math.max(1, Math.ceil(livePrimaryMembers.length / donorMembersPerPage))
   const donorPageNumbers = Array.from({ length: donorTotalPages }, (_, index) => index + 1)
   const donorCompactPageItems = (() => {
     if (donorTotalPages <= 5) {
@@ -194,12 +238,12 @@ export default function Homepage() {
     items.push(donorTotalPages)
     return items
   })()
-  const visibleDonorMembers = donorMembers.slice(
-    (donorPage - 1) * deceasedMembersPerPage,
-    donorPage * deceasedMembersPerPage
+  const visibleDonorMembers = livePrimaryMembers.slice(
+    (donorPage - 1) * donorMembersPerPage,
+    donorPage * donorMembersPerPage
   )
   const normalizedArchiveQuery = archiveQuery.trim().toLowerCase()
-  const filteredArchiveItems = archiveItems.filter((item) => {
+  const filteredArchiveItems = liveArchiveItems.filter((item) => {
     if (!normalizedArchiveQuery) {
       return true
     }
@@ -232,6 +276,17 @@ export default function Homepage() {
   const closeDonorProfileModal = () => {
     setSelectedDonorMember(null)
   }
+
+  const openNoticeModal = (notice) => {
+    setSelectedNotice(notice)
+  }
+
+  const closeNoticeModal = () => {
+    setSelectedNotice(null)
+  }
+
+  const toBanglaDigits = (value) =>
+    String(value).replace(/\d/g, (digit) => '০১২৩৪৫৬৭৮৯'[Number(digit)])
 
   const getYoutubeEmbedUrl = (url) => {
     if (!url) {
@@ -319,10 +374,35 @@ export default function Homepage() {
     setMembershipSubmitted(true)
   }
 
-  const handleIdVerification = (event) => {
+  const handleIdVerification = async (event) => {
     event.preventDefault()
-    const query = verificationInput.trim().toLowerCase()
-    const foundMember = memberDirectory.find((member) => member.id.toLowerCase() === query)
+    const query = verificationInput.trim()
+    if (!query) {
+      setVerificationMember(null)
+      return
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/api/v1/members/verify/${encodeURIComponent(query)}`)
+      const result = await response.json().catch(() => ({}))
+
+      if (response.ok && result.success && result.data) {
+        const member = result.data
+        setVerificationMember({
+          id: member.member_code,
+          name: member.name,
+          role: member.designation,
+          media: member.media_house,
+          phone: member.phone,
+          photoUrl: member.photoUrl || memberPlaceholderImage
+        })
+        return
+      }
+    } catch {
+      // Fall back to local directory lookup.
+    }
+
+    const foundMember = memberDirectory.find((member) => member.id.toLowerCase() === query.toLowerCase())
     setVerificationMember(foundMember || null)
   }
 
@@ -422,43 +502,11 @@ export default function Homepage() {
   }, [apiBase])
 
   useEffect(() => {
-    const parseEventBody = (body) => {
-      const rawBody = (body || '').trim()
-
-      if (!rawBody) {
-        return { date: '', time: '', venue: '' }
-      }
-
-      try {
-        const parsed = JSON.parse(rawBody)
-        if (parsed && typeof parsed === 'object') {
-          return {
-            date: String(parsed.date || '').trim(),
-            time: String(parsed.time || '').trim(),
-            venue: String(parsed.venue || '').trim()
-          }
-        }
-      } catch {
-        // Fall back to line-based parsing.
-      }
-
-      const lines = rawBody
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean)
-
-      return {
-        date: lines[0] || '',
-        time: lines[1] || '',
-        venue: lines.slice(2).join(' ') || ''
-      }
-    }
-
     const loadNoticesAndEvents = async () => {
       try {
         const [noticesResponse, eventsResponse] = await Promise.all([
-          fetch(`${apiBase}/api/v1/contents/notices`),
-          fetch(`${apiBase}/api/v1/contents/upcoming_events`)
+          fetch(`${apiBase}/api/v1/notices`),
+          fetch(`${apiBase}/api/v1/club-events`)
         ])
 
         const noticesResult = await noticesResponse.json().catch(() => ({}))
@@ -466,20 +514,13 @@ export default function Homepage() {
 
         if (noticesResponse.ok && noticesResult.success && Array.isArray(noticesResult.data)) {
           const normalizedNotices = noticesResult.data
-            .map((item) => {
-              const bodyDate = (item.body || '')
-                .split('\n')
-                .map((line) => line.trim())
-                .find(Boolean) || ''
-
-              const publishDate = bodyDate || item.updated_at || item.created_at || ''
-
-              return {
-                title: (item.title || '').trim(),
-                date: publishDate,
-                file: '#'
-              }
-            })
+            .map((item) => ({
+              id: item.id,
+              title: String(item.title || '').trim(),
+              date: String(item.date || '').trim(),
+              details: String(item.details || '').trim(),
+              url: item.url || item.fileUrl || item.linkUrl || null
+            }))
             .filter((item) => item.title)
 
           if (normalizedNotices.length > 0) {
@@ -489,15 +530,14 @@ export default function Homepage() {
 
         if (eventsResponse.ok && eventsResult.success && Array.isArray(eventsResult.data)) {
           const normalizedEvents = eventsResult.data
-            .map((item) => {
-              const parsedBody = parseEventBody(item.body)
-              return {
-                title: (item.title || '').trim(),
-                date: parsedBody.date,
-                time: parsedBody.time,
-                venue: parsedBody.venue
-              }
-            })
+            .map((item) => ({
+              id: item.id,
+              title: String(item.title || '').trim(),
+              date: String(item.date || '').trim(),
+              time: String(item.time || '').trim(),
+              venue: String(item.venue || '').trim(),
+              startsAt: item.startsAt || null
+            }))
             .filter((item) => item.title)
 
           if (normalizedEvents.length > 0) {
@@ -540,6 +580,204 @@ export default function Homepage() {
     }
 
     loadProgramSlides()
+  }, [apiBase])
+
+  useEffect(() => {
+    const loadLeadershipProfiles = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/leadership-profiles`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          return
+        }
+
+        const normalized = result.data
+          .map((item) => ({
+            id: item.id,
+            name: String(item.name || '').trim(),
+            role: String(item.role || '').trim(),
+            message: String(item.message || '').trim(),
+            phone: String(item.phone || '').trim(),
+            email: String(item.email || '').trim(),
+            social: String(item.social || '').trim(),
+            media: String(item.media || '').trim(),
+            photoTag: String(item.photoTag || '').trim(),
+            photoUrl: item.photoUrl || null
+          }))
+          .filter((item) => item.name && item.role)
+
+        if (normalized.length > 0) {
+          setLiveLeadershipProfiles(normalized)
+        }
+      } catch {
+        // Keep static leadership profiles if backend is unavailable.
+      }
+    }
+
+    loadLeadershipProfiles()
+  }, [apiBase])
+
+  useEffect(() => {
+    const loadCommitteeMembers = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/committee-members`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          return
+        }
+
+        const normalized = result.data
+          .map((item) => ({
+            id: item.id,
+            name: String(item.name || '').trim(),
+            role: String(item.role || '').trim(),
+            message: String(item.message || '').trim(),
+            phone: String(item.phone || '').trim(),
+            email: String(item.email || '').trim(),
+            social: String(item.social || '').trim(),
+            media: String(item.media || '').trim(),
+            photoUrl: item.photoUrl || null
+          }))
+          .filter((item) => item.name && item.role)
+
+        if (normalized.length > 0) {
+          setLiveCommittee(normalized)
+        }
+      } catch {
+        // Keep static committee if backend is unavailable.
+      }
+    }
+
+    loadCommitteeMembers()
+  }, [apiBase])
+
+  useEffect(() => {
+    const loadRegisteredMembers = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/members`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          return
+        }
+
+        const normalized = result.data
+          .map((item) => ({
+            id: item.id,
+            member_code: String(item.member_code || '').trim(),
+            name: String(item.name || '').trim(),
+            media_house: String(item.media_house || '').trim(),
+            designation: String(item.designation || '').trim(),
+            phone: String(item.phone || '').trim(),
+            email: String(item.email || '').trim(),
+            photoUrl: item.photoUrl || null,
+            status: String(item.status || 'active')
+          }))
+          .filter((item) => item.member_code && item.name)
+
+        setLiveRegisteredMembers(normalized)
+      } catch {
+        // Keep fallback directory if backend is unavailable.
+      }
+    }
+
+    loadRegisteredMembers()
+  }, [apiBase])
+
+  useEffect(() => {
+    const loadArchiveItems = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/archive-items`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          return
+        }
+
+        const normalized = result.data
+          .map((item) => ({
+            id: item.id,
+            year: String(item.year || '').trim(),
+            title: String(item.title || '').trim(),
+            type: String(item.type || '').trim(),
+            url: String(item.url || '#').trim() || '#'
+          }))
+          .filter((item) => item.year && item.title)
+
+        if (normalized.length > 0) {
+          setLiveArchiveItems(normalized)
+        }
+      } catch {
+        // Keep static archive items if backend is unavailable.
+      }
+    }
+
+    loadArchiveItems()
+  }, [apiBase])
+
+  useEffect(() => {
+    const loadDeceasedMembers = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/deceased-members`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          return
+        }
+
+        const normalized = result.data
+          .map((item) => ({
+            id: item.id,
+            name: String(item.name || '').trim(),
+            role: String(item.role || '').trim(),
+            tenure: String(item.tenure || '').trim(),
+            photoUrl: item.photoUrl || null
+          }))
+          .filter((item) => item.name && item.role)
+
+        if (normalized.length > 0) {
+          setLiveDeceasedMembers(normalized)
+        }
+      } catch {
+        // Keep static deceased members if backend is unavailable.
+      }
+    }
+
+    loadDeceasedMembers()
+  }, [apiBase])
+
+  useEffect(() => {
+    const loadPrimaryMembers = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/primary-members`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          return
+        }
+
+        const normalized = result.data
+          .map((item) => ({
+            id: item.id,
+            name: String(item.name || '').trim(),
+            role: String(item.role || '').trim(),
+            tenure: String(item.tenure || '').trim(),
+            contribution: String(item.contribution || '').trim(),
+            photoUrl: item.photoUrl || null
+          }))
+          .filter((item) => item.name && item.role)
+
+        if (normalized.length > 0) {
+          setLivePrimaryMembers(normalized)
+        }
+      } catch {
+        // Keep static primary members if backend is unavailable.
+      }
+    }
+
+    loadPrimaryMembers()
   }, [apiBase])
 
   useEffect(() => {
@@ -622,6 +860,27 @@ export default function Homepage() {
   }, [donorTotalPages])
 
   useEffect(() => {
+    const nextEvent = liveUpcomingEvents.find((item) => item.startsAt && !Number.isNaN(Date.parse(item.startsAt)))
+    if (!nextEvent) {
+      setEventCountdown({ days: 0, hours: 0, minutes: 0 })
+      return
+    }
+
+    const updateCountdown = () => {
+      const diffMs = Math.max(0, Date.parse(nextEvent.startsAt) - Date.now())
+      const totalMinutes = Math.floor(diffMs / 60000)
+      const days = Math.floor(totalMinutes / (60 * 24))
+      const hours = Math.floor((totalMinutes % (60 * 24)) / 60)
+      const minutes = totalMinutes % 60
+      setEventCountdown({ days, hours, minutes })
+    }
+
+    updateCountdown()
+    const timer = window.setInterval(updateCountdown, 30000)
+    return () => window.clearInterval(timer)
+  }, [liveUpcomingEvents])
+
+  useEffect(() => {
     const el = categoryRef.current
     if (!el) {
       return
@@ -679,6 +938,21 @@ export default function Homepage() {
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
   }, [selectedProfile])
+
+  useEffect(() => {
+    if (!selectedNotice) {
+      return
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        closeNoticeModal()
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [selectedNotice])
 
   useEffect(() => {
     if (!activeVideo) {
@@ -1009,24 +1283,39 @@ export default function Homepage() {
 
           <div className="mt-4 space-y-3">
             {liveNotices.map((notice, index) => (
-              <div key={notice.title} className="rounded-xl border border-ink/10 bg-ink/5 p-3 dark:border-white/20 dark:bg-white/5">
+              <div key={notice.id ?? notice.title} className="rounded-xl border border-ink/10 bg-ink/5 p-3 dark:border-white/20 dark:bg-white/5">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-semibold leading-snug text-ink dark:text-white">{notice.title}</p>
                   <span className="rounded-full bg-river/15 px-2 py-0.5 text-[11px] font-semibold text-river dark:bg-white/15 dark:text-white/90">
                     #{index + 1}
                   </span>
                 </div>
-                <p className="mt-1 text-xs font-medium text-ink/65 dark:text-white/70">প্রকাশ: {notice.date}</p>
+                <p className="mt-1 text-xs font-medium text-ink/65 dark:text-white/70">প্রকাশ: {notice.date || '—'}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <button className="inline-flex items-center gap-1 rounded-lg bg-river px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110">
-                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                      <path d="M12 3v12" />
-                      <path d="M7 10l5 5 5-5" />
-                      <path d="M5 21h14" />
-                    </svg>
-                    PDF ডাউনলোড
-                  </button>
-                  <button className="rounded-lg border border-ink/20 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15">
+                  {notice.url ? (
+                    <a
+                      href={notice.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 rounded-lg bg-river px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <path d="M12 3v12" />
+                        <path d="M7 10l5 5 5-5" />
+                        <path d="M5 21h14" />
+                      </svg>
+                      PDF ডাউনলোড
+                    </a>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-ink/20 px-3 py-1.5 text-xs font-semibold text-ink/60 dark:bg-white/10 dark:text-white/60">
+                      PDF নেই
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openNoticeModal(notice)}
+                    className="rounded-lg border border-ink/20 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                  >
                     বিস্তারিত
                   </button>
                 </div>
@@ -1042,25 +1331,25 @@ export default function Homepage() {
 
             <div className="mt-3 grid grid-cols-3 gap-2">
               <div className="rounded-xl bg-white/90 p-2 text-center dark:bg-white/10">
-                <p className="text-lg font-bold text-coral">০৫</p>
+                <p className="text-lg font-bold text-coral">{toBanglaDigits(String(eventCountdown.days).padStart(2, '0'))}</p>
                 <p className="text-[11px] font-semibold text-ink/70 dark:text-white/75">দিন</p>
               </div>
               <div className="rounded-xl bg-white/90 p-2 text-center dark:bg-white/10">
-                <p className="text-lg font-bold text-coral">১২</p>
+                <p className="text-lg font-bold text-coral">{toBanglaDigits(String(eventCountdown.hours).padStart(2, '0'))}</p>
                 <p className="text-[11px] font-semibold text-ink/70 dark:text-white/75">ঘন্টা</p>
               </div>
               <div className="rounded-xl bg-white/90 p-2 text-center dark:bg-white/10">
-                <p className="text-lg font-bold text-coral">৩০</p>
+                <p className="text-lg font-bold text-coral">{toBanglaDigits(String(eventCountdown.minutes).padStart(2, '0'))}</p>
                 <p className="text-[11px] font-semibold text-ink/70 dark:text-white/75">মিনিট</p>
               </div>
             </div>
 
             <div className="mt-3 space-y-2">
               {liveUpcomingEvents.map((eventItem) => (
-                <div key={eventItem.title} className="rounded-xl border border-ink/10 bg-white/80 p-2.5 dark:border-white/20 dark:bg-white/5">
+                <div key={eventItem.id ?? eventItem.title} className="rounded-xl border border-ink/10 bg-white/80 p-2.5 dark:border-white/20 dark:bg-white/5">
                   <p className="text-sm font-semibold text-ink dark:text-white">{eventItem.title}</p>
-                  <p className="mt-0.5 text-xs text-ink/70 dark:text-white/70">{eventItem.date} • {eventItem.time}</p>
-                  <p className="text-xs text-ink/70 dark:text-white/70">স্থান: {eventItem.venue}</p>
+                  <p className="mt-0.5 text-xs text-ink/70 dark:text-white/70">{eventItem.date}{eventItem.time ? ` • ${eventItem.time}` : ''}</p>
+                  {eventItem.venue && <p className="text-xs text-ink/70 dark:text-white/70">স্থান: {eventItem.venue}</p>}
                 </div>
               ))}
             </div>
@@ -1260,7 +1549,7 @@ export default function Homepage() {
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {visibleCommittee.map((person) => (
               <article
-                key={person.name}
+                key={person.id || `${person.name}-${person.role}`}
                 className="flex h-full min-h-[132px] cursor-pointer flex-col rounded-xl border border-ink/10 bg-gradient-to-r from-white to-[#fff3eb] p-3 transition hover:border-coral/35 hover:shadow-md dark:border-white/20 dark:from-white/5 dark:to-white/10 dark:hover:border-orange-200/45"
                 role="button"
                 tabIndex={0}
@@ -1675,16 +1964,20 @@ export default function Homepage() {
               />
               <div className="mt-2 max-h-40 space-y-2 overflow-y-auto pr-1">
                 {filteredArchiveItems.map((item) => (
-                  <div key={`${item.year}-${item.title}`} className="rounded-lg border border-white/15 bg-black/20 px-3 py-2">
+                  <div key={item.id || `${item.year}-${item.title}`} className="rounded-lg border border-white/15 bg-black/20 px-3 py-2">
                     <p className="text-xs text-mint">{item.year} • {item.type}</p>
                     <a
                       href={item.url}
+                      target="_blank"
+                      rel="noreferrer"
                       className="mt-0.5 block text-sm font-medium text-white transition hover:text-mint"
                     >
                       {item.title}
                     </a>
                     <a
                       href={item.url}
+                      target="_blank"
+                      rel="noreferrer"
                       className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-sky-200 underline decoration-sky-200/60 underline-offset-2 hover:text-mint"
                     >
                       আর্কাইভ দেখুন
@@ -1692,6 +1985,11 @@ export default function Homepage() {
                     </a>
                   </div>
                 ))}
+                {filteredArchiveItems.length === 0 && (
+                  <p className="rounded-lg border border-dashed border-white/20 px-3 py-4 text-center text-xs text-white/70">
+                    কোনো আর্কাইভ পাওয়া যায়নি।
+                  </p>
+                )}
               </div>
             </article>
 
@@ -1824,14 +2122,14 @@ export default function Homepage() {
               <p className="mt-1 text-sm text-ink/75 dark:text-white/75">ছবি সহ স্মরণ তালিকা</p>
             </div>
             <span className="rounded-full border border-coral/30 bg-coral/10 px-3 py-1 text-xs font-semibold text-coral dark:border-orange-200/35 dark:bg-orange-200/10 dark:text-orange-100">
-              মোট: {deceasedMembers.length}
+              মোট: {liveDeceasedMembers.length}
             </span>
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 700px' }}>
             {visibleDeceasedMembers.map((member) => (
               <article
-                key={`${member.name}-${member.tenure}`}
+                key={member.id || `${member.name}-${member.tenure}`}
                 className="flex cursor-pointer items-center gap-3 rounded-xl border border-ink/10 bg-white p-3 transition hover:border-coral/35 hover:shadow-sm dark:border-white/15 dark:bg-white/5 dark:hover:border-orange-200/40"
                 role="button"
                 tabIndex={0}
@@ -1976,14 +2274,14 @@ export default function Homepage() {
               <p className="mt-1 text-sm text-ink/75 dark:text-white/75">ছবি সহ প্রাথমিক সদস্য তালিকা</p>
             </div>
             <span className="rounded-full border border-river/30 bg-river/10 px-3 py-1 text-xs font-semibold text-river dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100">
-              মোট: {donorMembers.length}
+              মোট: {livePrimaryMembers.length}
             </span>
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 700px' }}>
             {visibleDonorMembers.map((member) => (
               <article
-                key={`${member.name}-${member.tenure}`}
+                key={member.id ?? `${member.name}-${member.tenure}`}
                 className="flex cursor-pointer items-center gap-3 rounded-xl border border-ink/10 bg-white p-3 transition hover:border-river/35 hover:shadow-sm dark:border-white/15 dark:bg-white/5 dark:hover:border-sky-200/40"
                 role="button"
                 tabIndex={0}
@@ -2126,18 +2424,18 @@ export default function Homepage() {
         <div className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-mint/10 blur-3xl" aria-hidden="true" />
 
         <div className="relative mx-auto w-full max-w-[1200px]">
-          <div className="grid gap-5 lg:grid-cols-12">
-          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm md:col-span-6 lg:col-span-4">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/25 bg-white/95 shadow-sm">
                 <img
                   src={siteLogo}
-                  alt="Cumilla Press Club logo"
+                  alt={`${siteName} logo`}
                   className="h-full w-full object-contain p-1"
                   loading="lazy"
                 />
               </span>
-              <h4 className="font-display text-2xl font-bold text-white">কুমিল্লা প্রেস ক্লাব</h4>
+              <h4 className="font-display text-2xl font-bold text-white">{siteName}</h4>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-white/82">
               স্বাধীন, দায়িত্বশীল ও আধুনিক সাংবাদিকতার চর্চায় কুমিল্লা প্রেস ক্লাব দীর্ঘদিন ধরে আস্থা, পেশাদারিত্ব ও জনস্বার্থভিত্তিক সংবাদকর্মের একটি শক্তিশালী প্ল্যাটফর্ম।
@@ -2147,10 +2445,10 @@ export default function Homepage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm md:col-span-3 lg:col-span-3">
+          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm">
             <h5 className="text-base font-semibold text-mint">গুরুত্বপূর্ণ লিংক</h5>
             <ul className="mt-3 space-y-2 text-sm text-white/85">
-              {importantLinks.map((link) => (
+              {footerImportantLinks.map((link) => (
                 <li key={link.label}>
                   <a href={link.url} className="inline-flex items-center gap-2 transition hover:text-mint">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-coral" />
@@ -2161,17 +2459,31 @@ export default function Homepage() {
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm md:col-span-3 lg:col-span-5">
+          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm">
+            <h5 className="text-base font-semibold text-mint">স্থানীয় পত্রিকার লিঙ্ক</h5>
+            <ul className="mt-3 space-y-2 text-sm text-white/85">
+              {footerLocalNewspaperLinks.map((link) => (
+                <li key={link.label}>
+                  <a href={link.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 transition hover:text-mint">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-mint" />
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm">
             <h5 className="text-base font-semibold text-mint">যোগাযোগ ও মানচিত্র</h5>
             <div className="mt-3 space-y-1.5 text-sm text-white/85">
-              <p>ঠিকানা: কুমিল্লা প্রেস ক্লাব, কুমিল্লা শহর, বাংলাদেশ</p>
-              <p>ফোন: +8801XXXXXXXXX</p>
-              <p>ইমেইল: info@cumillapressclub.org</p>
+              <p>ঠিকানা: {contactAddress}</p>
+              <p>ফোন: {contactPhone}</p>
+              <p>ইমেইল: {contactEmail}</p>
             </div>
             <div className="mt-3 overflow-hidden rounded-xl border border-white/20">
               <iframe
                 title="Cumilla Press Club Map"
-                src="https://www.google.com/maps?q=Comilla%20Bangladesh&output=embed"
+                src={mapEmbedUrl}
                 className="h-36 w-full"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
@@ -2186,15 +2498,15 @@ export default function Homepage() {
               <p className="mt-1 text-xs text-white/70">আপডেট পেতে আমাদের অফিসিয়াল চ্যানেলগুলোতে যুক্ত থাকুন</p>
             </div>
             <div className="flex flex-wrap gap-2 text-sm">
-              <a href="https://www.facebook.com/share/19Dr5t8wkK/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 transition hover:bg-white/20">
+              <a href={facebookUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 transition hover:bg-white/20">
                 <span aria-hidden="true">f</span>
                 Facebook
               </a>
-              <a href="https://www.youtube.com" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 transition hover:bg-white/20">
+              <a href={youtubeUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 transition hover:bg-white/20">
                 <span aria-hidden="true">▶</span>
                 YouTube
               </a>
-              <a href="https://x.com" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 transition hover:bg-white/20">
+              <a href={twitterUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 transition hover:bg-white/20">
                 <span aria-hidden="true">X</span>
                 X (Twitter)
               </a>
@@ -2217,9 +2529,9 @@ export default function Homepage() {
           </div>
 
           <div className="mt-4 text-center text-sm text-white/80">
-            <p>সার্বিক পরিকল্পনা ও বাস্তবায়নে: মো: আসিফ হোসাইন মান্না</p>
-            <p>বিজ্ঞান,তথ্য প্রযুক্তি ও গবেষণা সম্পাদক</p>
-            <p>কুমিল্লা প্রেসক্লাব</p>
+            {creditLine1 && <p>{creditLine1}</p>}
+            {creditLine2 && <p>{creditLine2}</p>}
+            {creditLine3 && <p>{creditLine3}</p>}
           </div>
         </div>
       </footer>
@@ -2253,7 +2565,11 @@ export default function Homepage() {
                 />
                 <div>
                   <p className="text-xs font-semibold tracking-wide text-river dark:text-sky-200">
-                    {selectedProfileGroup === 'leadership' ? 'নেতৃত্ব' : 'নির্বাহী কমিটি'}
+                    {selectedProfileGroup === 'leadership'
+                      ? 'নেতৃত্ব'
+                      : selectedProfileGroup === 'committee'
+                        ? 'নির্বাহী কমিটি'
+                        : 'নিবন্ধিত সদস্য'}
                   </p>
                   <h4 className="text-xl font-bold text-ink dark:text-white">{selectedProfile.name}</h4>
                   <p className="text-sm font-medium text-ink/75 dark:text-white/75">{selectedProfile.role}</p>
@@ -2438,6 +2754,64 @@ export default function Homepage() {
                 type="button"
                 onClick={closeDonorProfileModal}
                 className="rounded-xl bg-river px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </article>
+        </div>
+      )}
+
+      {selectedNotice && (
+        <div
+          className="fixed inset-0 z-[56] flex items-center justify-center bg-ink/65 p-4 backdrop-blur-[1px]"
+          onClick={closeNoticeModal}
+          role="presentation"
+        >
+          <article
+            className="w-full max-w-lg rounded-3xl border border-ink/15 bg-white p-5 shadow-2xl dark:border-white/20 dark:bg-[#0f1722]"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="নোটিশ বিস্তারিত"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold tracking-wide text-river dark:text-sky-200">নোটিশ</p>
+                <h4 className="mt-1 text-xl font-bold text-ink dark:text-white">{selectedNotice.title}</h4>
+                <p className="mt-1 text-sm text-ink/70 dark:text-white/70">প্রকাশ: {selectedNotice.date || '—'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeNoticeModal}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-ink/20 text-ink/70 transition hover:bg-ink/5 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/10"
+                aria-label="নোটিশ বন্ধ করুন"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-ink/10 bg-ink/5 p-4 dark:border-white/15 dark:bg-white/5">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink/80 dark:text-white/80">
+                {selectedNotice.details || 'এই নোটিশের অতিরিক্ত বিবরণ নেই।'}
+              </p>
+            </div>
+
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              {selectedNotice.url && (
+                <a
+                  href={selectedNotice.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl bg-river px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+                >
+                  PDF ডাউনলোড
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={closeNoticeModal}
+                className="rounded-xl border border-ink/20 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
               >
                 বন্ধ করুন
               </button>

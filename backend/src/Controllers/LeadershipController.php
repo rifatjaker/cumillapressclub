@@ -8,39 +8,19 @@ use App\Config\Database;
 use App\Core\Request;
 use PDO;
 
-final class MemberController
+final class LeadershipController
 {
     public function publicIndex(Request $request): array
     {
         $pdo = Database::connection();
         $this->ensureSchema($pdo);
 
-        $q = trim((string) ($request->query['q'] ?? ''));
-
-        if ($q !== '') {
-            $stmt = $pdo->prepare(
-                'SELECT id, member_code, name, media_house, designation, phone, email, photo_path, status, expires_at
-                 FROM members
-                 WHERE status = \'active\'
-                   AND (
-                     name LIKE :query
-                     OR member_code LIKE :query
-                     OR media_house LIKE :query
-                     OR designation LIKE :query
-                   )
-                 ORDER BY name ASC
-                 LIMIT 100'
-            );
-            $stmt->execute(['query' => '%' . $q . '%']);
-        } else {
-            $stmt = $pdo->query(
-                'SELECT id, member_code, name, media_house, designation, phone, email, photo_path, status, expires_at
-                 FROM members
-                 WHERE status = \'active\'
-                 ORDER BY name ASC
-                 LIMIT 500'
-            );
-        }
+        $stmt = $pdo->query(
+            'SELECT id, name, role, message, phone, email, social, media, photo_tag, photo_path, sort_order
+             FROM leadership_profiles
+             WHERE is_active = 1
+             ORDER BY sort_order ASC, id ASC'
+        );
 
         $items = array_map(fn(array $item): array => $this->mapPublicItem($item), $stmt->fetchAll(PDO::FETCH_ASSOC));
 
@@ -53,73 +33,32 @@ final class MemberController
         ];
     }
 
-    public function search(Request $request): array
-    {
-        return $this->publicIndex($request);
-    }
-
-    public function verify(Request $request, array $params): array
-    {
-        $code = trim((string) ($params['code'] ?? ''));
-
-        if ($code === '') {
-            return [
-                'data' => ['success' => false, 'message' => 'Member code is required'],
-                'status' => 422,
-            ];
-        }
-
-        $pdo = Database::connection();
-        $this->ensureSchema($pdo);
-
-        $stmt = $pdo->prepare(
-            'SELECT id, member_code, name, media_house, designation, phone, email, photo_path, status, expires_at
-             FROM members
-             WHERE member_code = :code
-             LIMIT 1'
-        );
-        $stmt->execute(['code' => $code]);
-        $member = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$member) {
-            return [
-                'data' => ['success' => false, 'message' => 'Member not found'],
-                'status' => 404,
-            ];
-        }
-
-        return [
-            'data' => [
-                'success' => true,
-                'data' => $this->mapPublicItem($member),
-            ],
-            'status' => 200,
-        ];
-    }
-
     public function adminIndex(Request $request): array
     {
         $pdo = Database::connection();
         $this->ensureSchema($pdo);
 
         $stmt = $pdo->query(
-            'SELECT id, member_code, name, media_house, designation, phone, email, photo_path, status, expires_at, created_at, updated_at
-             FROM members
-             ORDER BY id DESC'
+            'SELECT id, name, role, message, phone, email, social, media, photo_tag, photo_path,
+                    sort_order, is_active, created_at, updated_at
+             FROM leadership_profiles
+             ORDER BY sort_order ASC, id ASC'
         );
 
         $items = array_map(fn(array $item): array => [
             'id' => (int) $item['id'],
-            'member_code' => (string) $item['member_code'],
             'name' => (string) $item['name'],
-            'media_house' => (string) $item['media_house'],
-            'designation' => (string) $item['designation'],
+            'role' => (string) $item['role'],
+            'message' => (string) ($item['message'] ?? ''),
             'phone' => (string) ($item['phone'] ?? ''),
             'email' => (string) ($item['email'] ?? ''),
+            'social' => (string) ($item['social'] ?? ''),
+            'media' => (string) ($item['media'] ?? ''),
+            'photo_tag' => (string) ($item['photo_tag'] ?? ''),
             'photo_path' => $item['photo_path'] !== null ? (string) $item['photo_path'] : null,
             'photo_url' => !empty($item['photo_path']) ? $this->toPublicUrl((string) $item['photo_path']) : null,
-            'status' => (string) $item['status'],
-            'expires_at' => $item['expires_at'] !== null ? (string) $item['expires_at'] : null,
+            'sort_order' => (int) $item['sort_order'],
+            'is_active' => (int) $item['is_active'],
             'created_at' => (string) $item['created_at'],
             'updated_at' => (string) $item['updated_at'],
         ], $stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -141,16 +80,6 @@ final class MemberController
             return $validation;
         }
 
-        $pdo = Database::connection();
-        $this->ensureSchema($pdo);
-
-        if ($this->memberCodeExists($pdo, $payload['member_code'])) {
-            return [
-                'data' => ['success' => false, 'message' => 'Member code already exists'],
-                'status' => 422,
-            ];
-        }
-
         $photoPath = null;
         if (isset($_FILES['photo']) && is_array($_FILES['photo']) && (int) ($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
             $upload = $this->saveUploadedPhoto($_FILES['photo']);
@@ -163,28 +92,36 @@ final class MemberController
             $photoPath = (string) $upload['path'];
         }
 
+        $adminId = (int) (($request->user()['id'] ?? 0));
+        $pdo = Database::connection();
+        $this->ensureSchema($pdo);
+
         $stmt = $pdo->prepare(
-            'INSERT INTO members
-             (member_code, name, media_house, designation, phone, email, photo_path, status, expires_at)
+            'INSERT INTO leadership_profiles
+             (name, role, message, phone, email, social, media, photo_tag, photo_path, sort_order, is_active, created_by, updated_by)
              VALUES
-             (:member_code, :name, :media_house, :designation, :phone, :email, :photo_path, :status, :expires_at)'
+             (:name, :role, :message, :phone, :email, :social, :media, :photo_tag, :photo_path, :sort_order, :is_active, :created_by, :updated_by)'
         );
         $stmt->execute([
-            'member_code' => $payload['member_code'],
             'name' => $payload['name'],
-            'media_house' => $payload['media_house'],
-            'designation' => $payload['designation'],
-            'phone' => $payload['phone'] !== '' ? $payload['phone'] : null,
-            'email' => $payload['email'] !== '' ? $payload['email'] : null,
+            'role' => $payload['role'],
+            'message' => $payload['message'],
+            'phone' => $payload['phone'],
+            'email' => $payload['email'],
+            'social' => $payload['social'],
+            'media' => $payload['media'],
+            'photo_tag' => $payload['photo_tag'],
             'photo_path' => $photoPath,
-            'status' => $payload['status'],
-            'expires_at' => $payload['expires_at'] !== '' ? $payload['expires_at'] : null,
+            'sort_order' => $payload['sort_order'],
+            'is_active' => $payload['is_active'],
+            'created_by' => $adminId > 0 ? $adminId : null,
+            'updated_by' => $adminId > 0 ? $adminId : null,
         ]);
 
         return [
             'data' => [
                 'success' => true,
-                'message' => 'Member created',
+                'message' => 'Leadership profile created',
                 'data' => ['id' => (int) $pdo->lastInsertId()],
             ],
             'status' => 201,
@@ -196,7 +133,7 @@ final class MemberController
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0) {
             return [
-                'data' => ['success' => false, 'message' => 'Invalid member id'],
+                'data' => ['success' => false, 'message' => 'Invalid leadership id'],
                 'status' => 422,
             ];
         }
@@ -210,21 +147,14 @@ final class MemberController
         $pdo = Database::connection();
         $this->ensureSchema($pdo);
 
-        $findStmt = $pdo->prepare('SELECT photo_path FROM members WHERE id = :id LIMIT 1');
+        $findStmt = $pdo->prepare('SELECT photo_path FROM leadership_profiles WHERE id = :id LIMIT 1');
         $findStmt->execute(['id' => $id]);
         $existing = $findStmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$existing) {
             return [
-                'data' => ['success' => false, 'message' => 'Member not found'],
+                'data' => ['success' => false, 'message' => 'Leadership profile not found'],
                 'status' => 404,
-            ];
-        }
-
-        if ($this->memberCodeExists($pdo, $payload['member_code'], $id)) {
-            return [
-                'data' => ['success' => false, 'message' => 'Member code already exists'],
-                'status' => 422,
             ];
         }
 
@@ -243,36 +173,44 @@ final class MemberController
             $photoPath = (string) $upload['path'];
         }
 
+        $adminId = (int) (($request->user()['id'] ?? 0));
+
         $stmt = $pdo->prepare(
-            'UPDATE members
-             SET member_code = :member_code,
-                 name = :name,
-                 media_house = :media_house,
-                 designation = :designation,
+            'UPDATE leadership_profiles
+             SET name = :name,
+                 role = :role,
+                 message = :message,
                  phone = :phone,
                  email = :email,
+                 social = :social,
+                 media = :media,
+                 photo_tag = :photo_tag,
                  photo_path = :photo_path,
-                 status = :status,
-                 expires_at = :expires_at
+                 sort_order = :sort_order,
+                 is_active = :is_active,
+                 updated_by = :updated_by
              WHERE id = :id'
         );
         $stmt->execute([
             'id' => $id,
-            'member_code' => $payload['member_code'],
             'name' => $payload['name'],
-            'media_house' => $payload['media_house'],
-            'designation' => $payload['designation'],
-            'phone' => $payload['phone'] !== '' ? $payload['phone'] : null,
-            'email' => $payload['email'] !== '' ? $payload['email'] : null,
+            'role' => $payload['role'],
+            'message' => $payload['message'],
+            'phone' => $payload['phone'],
+            'email' => $payload['email'],
+            'social' => $payload['social'],
+            'media' => $payload['media'],
+            'photo_tag' => $payload['photo_tag'],
             'photo_path' => $photoPath,
-            'status' => $payload['status'],
-            'expires_at' => $payload['expires_at'] !== '' ? $payload['expires_at'] : null,
+            'sort_order' => $payload['sort_order'],
+            'is_active' => $payload['is_active'],
+            'updated_by' => $adminId > 0 ? $adminId : null,
         ]);
 
         return [
             'data' => [
                 'success' => true,
-                'message' => 'Member updated',
+                'message' => 'Leadership profile updated',
             ],
             'status' => 200,
         ];
@@ -283,7 +221,7 @@ final class MemberController
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0) {
             return [
-                'data' => ['success' => false, 'message' => 'Invalid member id'],
+                'data' => ['success' => false, 'message' => 'Invalid leadership id'],
                 'status' => 422,
             ];
         }
@@ -291,18 +229,18 @@ final class MemberController
         $pdo = Database::connection();
         $this->ensureSchema($pdo);
 
-        $findStmt = $pdo->prepare('SELECT photo_path FROM members WHERE id = :id LIMIT 1');
+        $findStmt = $pdo->prepare('SELECT photo_path FROM leadership_profiles WHERE id = :id LIMIT 1');
         $findStmt->execute(['id' => $id]);
         $existing = $findStmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$existing) {
             return [
-                'data' => ['success' => false, 'message' => 'Member not found'],
+                'data' => ['success' => false, 'message' => 'Leadership profile not found'],
                 'status' => 404,
             ];
         }
 
-        $deleteStmt = $pdo->prepare('DELETE FROM members WHERE id = :id');
+        $deleteStmt = $pdo->prepare('DELETE FROM leadership_profiles WHERE id = :id');
         $deleteStmt->execute(['id' => $id]);
         if (!empty($existing['photo_path'])) {
             $this->deleteFileIfExists((string) $existing['photo_path']);
@@ -311,7 +249,7 @@ final class MemberController
         return [
             'data' => [
                 'success' => true,
-                'message' => 'Member deleted',
+                'message' => 'Leadership profile deleted',
             ],
             'status' => 200,
         ];
@@ -321,54 +259,54 @@ final class MemberController
     {
         return [
             'id' => (int) $item['id'],
-            'member_code' => (string) $item['member_code'],
             'name' => (string) $item['name'],
-            'media_house' => (string) $item['media_house'],
-            'designation' => (string) $item['designation'],
+            'role' => (string) $item['role'],
+            'message' => (string) ($item['message'] ?? ''),
             'phone' => (string) ($item['phone'] ?? ''),
             'email' => (string) ($item['email'] ?? ''),
+            'social' => (string) ($item['social'] ?? ''),
+            'media' => (string) ($item['media'] ?? ''),
+            'photoTag' => (string) ($item['photo_tag'] ?? ''),
             'photoUrl' => !empty($item['photo_path']) ? $this->toPublicUrl((string) $item['photo_path']) : null,
-            'status' => (string) $item['status'],
-            'expires_at' => $item['expires_at'] !== null ? (string) $item['expires_at'] : null,
+            'sort_order' => (int) $item['sort_order'],
         ];
     }
 
-    /** @return array{member_code: string, name: string, media_house: string, designation: string, phone: string, email: string, status: string, expires_at: string} */
+    /** @return array{name: string, role: string, message: string, phone: string, email: string, social: string, media: string, photo_tag: string, sort_order: int, is_active: int} */
     private function readFormPayload(): array
     {
-        $status = strtolower(trim((string) ($_POST['status'] ?? 'active')));
-        if (!in_array($status, ['active', 'inactive', 'expired'], true)) {
-            $status = 'active';
-        }
-
         return [
-            'member_code' => trim((string) ($_POST['member_code'] ?? '')),
             'name' => trim((string) ($_POST['name'] ?? '')),
-            'media_house' => trim((string) ($_POST['media_house'] ?? '')),
-            'designation' => trim((string) ($_POST['designation'] ?? '')),
+            'role' => trim((string) ($_POST['role'] ?? '')),
+            'message' => trim((string) ($_POST['message'] ?? '')),
             'phone' => trim((string) ($_POST['phone'] ?? '')),
             'email' => trim((string) ($_POST['email'] ?? '')),
-            'status' => $status,
-            'expires_at' => trim((string) ($_POST['expires_at'] ?? '')),
+            'social' => trim((string) ($_POST['social'] ?? '')),
+            'media' => trim((string) ($_POST['media'] ?? '')),
+            'photo_tag' => trim((string) ($_POST['photo_tag'] ?? '')),
+            'sort_order' => (int) ($_POST['sort_order'] ?? 0),
+            'is_active' => in_array(strtolower((string) ($_POST['is_active'] ?? '1')), ['1', 'true', 'on', 'yes'], true) ? 1 : 0,
         ];
     }
 
     private function validatePayload(array $payload, bool $_isCreate): ?array
     {
-        if ($payload['member_code'] === '' || $payload['name'] === '' || $payload['media_house'] === '' || $payload['designation'] === '') {
+        if ($payload['name'] === '' || $payload['role'] === '') {
             return [
-                'data' => ['success' => false, 'message' => 'member_code, name, media_house and designation are required'],
+                'data' => ['success' => false, 'message' => 'name and role are required'],
                 'status' => 422,
             ];
         }
 
         if (
-            strlen($payload['member_code']) > 50
-            || strlen($payload['name']) > 150
-            || strlen($payload['media_house']) > 180
-            || strlen($payload['designation']) > 120
-            || strlen($payload['phone']) > 30
+            strlen($payload['name']) > 150
+            || strlen($payload['role']) > 120
+            || strlen($payload['message']) > 2000
+            || strlen($payload['phone']) > 40
             || strlen($payload['email']) > 190
+            || strlen($payload['social']) > 255
+            || strlen($payload['media']) > 180
+            || strlen($payload['photo_tag']) > 80
         ) {
             return [
                 'data' => ['success' => false, 'message' => 'Input too long'],
@@ -376,59 +314,32 @@ final class MemberController
             ];
         }
 
-        if ($payload['expires_at'] !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $payload['expires_at'])) {
-            return [
-                'data' => ['success' => false, 'message' => 'expires_at must be YYYY-MM-DD'],
-                'status' => 422,
-            ];
-        }
-
         return null;
-    }
-
-    private function memberCodeExists(PDO $pdo, string $code, ?int $excludeId = null): bool
-    {
-        if ($excludeId !== null) {
-            $stmt = $pdo->prepare('SELECT id FROM members WHERE member_code = :code AND id <> :id LIMIT 1');
-            $stmt->execute(['code' => $code, 'id' => $excludeId]);
-        } else {
-            $stmt = $pdo->prepare('SELECT id FROM members WHERE member_code = :code LIMIT 1');
-            $stmt->execute(['code' => $code]);
-        }
-
-        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     private function ensureSchema(PDO $pdo): void
     {
         $pdo->exec(
-            'CREATE TABLE IF NOT EXISTS members (
+            'CREATE TABLE IF NOT EXISTS leadership_profiles (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                member_code VARCHAR(50) NOT NULL UNIQUE,
                 name VARCHAR(150) NOT NULL,
-                media_house VARCHAR(180) NOT NULL,
-                designation VARCHAR(120) NOT NULL,
-                phone VARCHAR(30) NULL,
+                role VARCHAR(120) NOT NULL,
+                message TEXT NULL,
+                phone VARCHAR(40) NULL,
                 email VARCHAR(190) NULL,
+                social VARCHAR(255) NULL,
+                media VARCHAR(180) NULL,
+                photo_tag VARCHAR(80) NULL,
                 photo_path VARCHAR(500) NULL,
-                status ENUM(\'active\', \'inactive\', \'expired\') NOT NULL DEFAULT \'active\',
-                expires_at DATE NULL,
+                sort_order INT NOT NULL DEFAULT 0,
+                is_active TINYINT(1) NOT NULL DEFAULT 1,
+                created_by BIGINT UNSIGNED NULL,
+                updated_by BIGINT UNSIGNED NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                INDEX idx_members_name (name),
-                INDEX idx_members_code (member_code)
+                INDEX idx_leadership_active_sort (is_active, sort_order)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
         );
-
-        $columns = $pdo->query('SHOW COLUMNS FROM members')->fetchAll(PDO::FETCH_COLUMN);
-        $columns = array_map('strval', $columns ?: []);
-
-        if (!in_array('email', $columns, true)) {
-            $pdo->exec('ALTER TABLE members ADD COLUMN email VARCHAR(190) NULL AFTER phone');
-        }
-        if (!in_array('photo_path', $columns, true)) {
-            $pdo->exec('ALTER TABLE members ADD COLUMN photo_path VARCHAR(500) NULL AFTER email');
-        }
     }
 
     private function saveUploadedPhoto(array $file): array
@@ -452,12 +363,12 @@ final class MemberController
             return ['success' => false, 'message' => 'Only jpg, jpeg, png, webp are allowed'];
         }
 
-        $uploadDir = BASE_PATH . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'members';
+        $uploadDir = BASE_PATH . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'leadership';
         if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
             return ['success' => false, 'message' => 'Cannot create upload directory'];
         }
 
-        $fileName = 'member-' . bin2hex(random_bytes(12)) . '.' . $extension;
+        $fileName = 'leader-' . bin2hex(random_bytes(12)) . '.' . $extension;
         $destination = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
 
         if (!move_uploaded_file($tmpName, $destination)) {
@@ -466,7 +377,7 @@ final class MemberController
 
         return [
             'success' => true,
-            'path' => '/uploads/members/' . $fileName,
+            'path' => '/uploads/leadership/' . $fileName,
         ];
     }
 

@@ -88,10 +88,11 @@ function navIconTone(type) {
   return 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300'
 }
 
-export default function Header({ darkMode, onToggleTheme, onAdminOpen }) {
+export default function Header({ darkMode, onToggleTheme, onAdminOpen, siteName, siteLogo }) {
   const [isNavFixed, setIsNavFixed] = useState(false)
   const [isLogoZoomOpen, setIsLogoZoomOpen] = useState(false)
-  const siteLogo = `${import.meta.env.BASE_URL}logo.jpg`
+  const resolvedSiteLogo = siteLogo || `${import.meta.env.BASE_URL}logo.jpg`
+  const resolvedSiteName = siteName || 'কুমিল্লা প্রেসক্লাব'
   const now = useMemo(() => new Date(), [])
   const enDate = now.toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -165,10 +166,10 @@ export default function Header({ darkMode, onToggleTheme, onAdminOpen }) {
 
       <div className="flex w-full flex-col items-start justify-between gap-4 px-3 py-5 sm:px-5 lg:px-8 md:flex-row md:items-center">
         <div className="flex items-start gap-2.5">
-          <span className="mt-0.5 inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm dark:border-white/20 dark:bg-white/95" aria-label="কুমিল্লা প্রেসক্লাব লোগো">
+          <span className="mt-0.5 inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm dark:border-white/20 dark:bg-white/95" aria-label={`${resolvedSiteName} লোগো`}>
             <img
-              src={siteLogo}
-              alt="Cumilla Press Club logo"
+              src={resolvedSiteLogo}
+              alt={`${resolvedSiteName} logo`}
               className="h-full w-full cursor-zoom-in object-contain p-1.5"
               onClick={() => setIsLogoZoomOpen(true)}
               loading="eager"
@@ -176,8 +177,8 @@ export default function Header({ darkMode, onToggleTheme, onAdminOpen }) {
             />
           </span>
           <div>
-            <h1 className="font-display text-3xl font-bold text-ink dark:text-white">কুমিল্লা প্রেসক্লাব</h1>
-            <p className="text-sm font-medium italic text-ink/70 dark:text-white/70">কুমিল্লা প্রেসক্লাব ডিজিটাল পোর্টাল</p>
+            <h1 className="font-display text-3xl font-bold text-ink dark:text-white">{resolvedSiteName}</h1>
+            <p className="text-sm font-medium italic text-ink/70 dark:text-white/70">{resolvedSiteName} ডিজিটাল পোর্টাল</p>
           </div>
         </div>
         <div className="w-full rounded-2xl bg-gradient-to-r from-coral to-river px-6 py-4 text-white md:w-[440px]">
@@ -238,7 +239,7 @@ export default function Header({ darkMode, onToggleTheme, onAdminOpen }) {
             </div>
             <div className="overflow-hidden rounded-xl bg-black/60 p-3">
               <img
-                src={siteLogo}
+                src={resolvedSiteLogo}
                 alt="Cumilla Press Club logo বড় প্রিভিউ"
                 className="mx-auto h-auto max-h-[70vh] w-full max-w-[320px] object-contain"
               />

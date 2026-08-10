@@ -1,4 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import ArchiveManager from './ArchiveManager'
+import CommitteeManager from './CommitteeManager'
+import DeceasedMembersManager from './DeceasedMembersManager'
+import LeadershipManager from './LeadershipManager'
+import MembersManager from './MembersManager'
+import PageSettingsManager from './PageSettingsManager'
+import PrimaryMembersManager from './PrimaryMembersManager'
+import NoticesEventsManager from './NoticesEventsManager'
 import SliderManager from './SliderManager'
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
@@ -10,6 +18,19 @@ const initialForm = {
   sort_order: 0,
   is_active: true
 }
+
+const adminMenus = [
+  { id: 'contents', label: 'ডাইনামিক কনটেন্ট' },
+  { id: 'slider', label: 'স্লাইডার' },
+  { id: 'notices-events', label: 'নোটিশ ও ইভেন্ট' },
+  { id: 'leadership', label: 'নেতৃত্বের প্রোফাইল' },
+  { id: 'committee', label: 'নির্বাহী কমিটি' },
+  { id: 'members', label: 'সদস্য ডিরেক্টরি' },
+  { id: 'archive', label: 'ই-লাইব্রেরি ও আর্কাইভ' },
+  { id: 'deceased', label: 'প্রয়াত সদস্য' },
+  { id: 'primary', label: 'প্রাথমিক সদস্য' },
+  { id: 'page-settings', label: 'Page Settings' }
+]
 
 export default function AdminDashboard({ darkMode, onToggleTheme }) {
   const [token, setToken] = useState(localStorage.getItem('cpc-admin-access-token') || '')
@@ -26,6 +47,7 @@ export default function AdminDashboard({ darkMode, onToggleTheme }) {
   const [isLoggingIn, setIsLoggingIn] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [activeMenu, setActiveMenu] = useState('contents')
 
   const loggedIn = token.length > 0
   const dashboardTitle = useMemo(() => 'অ্যাডমিন ড্যাশবোর্ড', [])
@@ -256,7 +278,7 @@ export default function AdminDashboard({ darkMode, onToggleTheme }) {
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-ink/10 bg-white p-4 shadow-card dark:border-white/20 dark:bg-[#101827]">
           <div>
             <h1 className="text-2xl font-bold text-ink dark:text-white">{dashboardTitle}</h1>
-            <p className="text-sm text-ink/70 dark:text-white/70">ডাইনামিক কনটেন্ট ও স্লাইডার ম্যানেজমেন্ট</p>
+            <p className="text-sm text-ink/70 dark:text-white/70">ডাইনামিক কনটেন্ট, স্লাইডার, নেতৃত্ব ও পেজ সেটিংস</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -288,6 +310,24 @@ export default function AdminDashboard({ darkMode, onToggleTheme }) {
           renderLogin()
         ) : (
           <>
+            <nav className="mt-5 flex flex-wrap gap-2" aria-label="Admin menus">
+              {adminMenus.map((menu) => (
+                <button
+                  key={menu.id}
+                  type="button"
+                  onClick={() => setActiveMenu(menu.id)}
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                    activeMenu === menu.id
+                      ? 'bg-river text-white'
+                      : 'border border-ink/20 bg-white text-ink hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15'
+                  }`}
+                >
+                  {menu.label}
+                </button>
+              ))}
+            </nav>
+
+            {activeMenu === 'contents' && (
             <div className="mt-6 grid gap-5 lg:grid-cols-5">
               <section className="rounded-3xl border border-ink/10 bg-white p-5 shadow-card dark:border-white/20 dark:bg-[#101827] lg:col-span-2">
                 <h3 className="text-lg font-bold text-ink dark:text-white">{editingId ? 'কনটেন্ট এডিট' : 'নতুন কনটেন্ট'}</h3>
@@ -418,8 +458,17 @@ export default function AdminDashboard({ darkMode, onToggleTheme }) {
                 </div>
               </section>
             </div>
+            )}
 
-            <SliderManager token={token} />
+            {activeMenu === 'slider' && <SliderManager token={token} />}
+            {activeMenu === 'notices-events' && <NoticesEventsManager token={token} />}
+            {activeMenu === 'leadership' && <LeadershipManager token={token} />}
+            {activeMenu === 'committee' && <CommitteeManager token={token} />}
+            {activeMenu === 'members' && <MembersManager token={token} />}
+            {activeMenu === 'archive' && <ArchiveManager token={token} />}
+            {activeMenu === 'deceased' && <DeceasedMembersManager token={token} />}
+            {activeMenu === 'primary' && <PrimaryMembersManager token={token} />}
+            {activeMenu === 'page-settings' && <PageSettingsManager token={token} />}
           </>
         )}
       </div>

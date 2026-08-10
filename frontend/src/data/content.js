@@ -52,9 +52,9 @@ export const heroHighlights = [
 export const categories = ['রাজনীতি', 'অর্থনীতি', 'খেলাধুলা', 'স্থানীয় খবর', 'অপরাধ', 'উন্নয়ন']
 
 export const notices = [
-  { title: 'সদস্য পরিচয়পত্র নবায়ন বিজ্ঞপ্তি', date: '০৮ আগস্ট ২০২৬', file: 'membership-renewal.pdf' },
-  { title: 'প্রেস রিলিজ প্রকাশ নীতিমালা', date: '০৫ আগস্ট ২০২৬', file: 'press-release-policy.pdf' },
-  { title: 'সাধারণ সভার কার্যসূচি', date: '০২ আগস্ট ২০২৬', file: 'general-meeting-agenda.pdf' }
+  { title: 'সদস্য পরিচয়পত্র নবায়ন বিজ্ঞপ্তি', date: '০৮ আগস্ট ২০২৬', details: 'সদস্য পরিচয়পত্র নবায়নের জন্য নির্ধারিত সময়ের মধ্যে আবেদন করুন।', url: null },
+  { title: 'প্রেস রিলিজ প্রকাশ নীতিমালা', date: '০৫ আগস্ট ২০২৬', details: 'প্রেস রিলিজ জমা ও প্রকাশের হালনাগাদ নীতিমালা।', url: null },
+  { title: 'সাধারণ সভার কার্যসূচি', date: '০২ আগস্ট ২০২৬', details: 'সাধারণ সভার আলোচ্যসূচি ও সময়সূচি প্রকাশিত হয়েছে।', url: null }
 ]
 
 export const upcomingEvents = [
@@ -62,13 +62,15 @@ export const upcomingEvents = [
     title: 'প্রেস ক্লাবের সাধারণ সভা',
     date: '১০ আগস্ট ২০২৬',
     time: 'বিকাল ৪:০০',
-    venue: 'প্রেস ক্লাব অডিটোরিয়াম'
+    venue: 'প্রেস ক্লাব অডিটোরিয়াম',
+    startsAt: null
   },
   {
     title: 'সাংবাদিকতা সেমিনার ও প্রশিক্ষণ',
     date: '১৪ আগস্ট ২০২৬',
     time: 'সকাল ১১:০০',
-    venue: 'কুমিল্লা টাউন হল'
+    venue: 'কুমিল্লা টাউন হল',
+    startsAt: null
   }
 ]
 
@@ -267,4 +269,11 @@ export const importantLinks = [
   { label: 'পুলিশ সুপার কার্যালয়', url: '#' },
   { label: 'তথ্য মন্ত্রণালয়', url: '#' },
   { label: 'বাংলাদেশ প্রেস কাউন্সিল', url: '#' }
+]
+
+export const localNewspaperLinks = [
+  { label: 'দৈনিক কুমিল্লা', url: '#' },
+  { label: 'সমকাল কুমিল্লা', url: '#' },
+  { label: 'কুমিল্লা বার্তা', url: '#' },
+  { label: 'প্রতিদিনের সংবাদ', url: '#' }
 ]

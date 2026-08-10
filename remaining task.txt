@@ -1,0 +1,20 @@
+Backend API — done
+Auth (login / refresh / logout / me)
+Contents CRUD + public by section
+Slider items CRUD + public list
+News list + admin create
+Members search + verify
+Complaints submit (email via mail())
+=======================================
+
+এখনো নেই / static
+Sponsored Banner ম্যানেজমেন্ট
+Leadership / committee / members admin
+Notice PDF upload
+Gallery video/photo proper manager (এখন generic content)
+Membership / press-release form inbox
+Complaints admin inbox (শুধু email)
+News full CMS UI
+Users / roles management
+Dedicated nav/modules (এক পেজে content + slider)
+সংক্ষেপে: Auth + dynamic text content + program slider চালু। বাকি বেশিরভাগ homepage এখনও content.js থেকে; admin থেকে পুরো সাইট কন্ট্রোল করা যায় না।

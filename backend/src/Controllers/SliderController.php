@@ -226,7 +226,7 @@ final class SliderController
 
         $deleteStmt = $pdo->prepare('DELETE FROM slider_items WHERE id = :id');
         $deleteStmt->execute(['id' => $id]);
-+        $this->deleteFileIfExists((string) $existing['image_path']);
+        $this->deleteFileIfExists((string) $existing['image_path']);
 
         return [
             'data' => [
