@@ -28,6 +28,7 @@ Media gallery dedicated admin + homepage from API
 Removed generic Dynamic Content admin menu
 Hero highlights (প্রধান খবরের হাইলাইট) dedicated admin + homepage from API
 Discussed topics (আলোচিত বিষয়) CMS tags admin + homepage from API
+Homepage: slider no static fallback + full-page load animation until APIs ready
 
 এখনো নেই / Remaining
 =======================================

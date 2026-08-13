@@ -1,11 +1,29 @@
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE } from '../apiBase'
-import { deceasedMembers, departmentsOverview, donorMembers, importantLinks, localNewspaperLinks, programSliderImages } from '../data/content'
+import { departmentsOverview, importantLinks, localNewspaperLinks } from '../data/content'
+
+const HOME_BOOTSTRAP_KEYS = [
+  'breaking',
+  'featured',
+  'highlights',
+  'topics',
+  'notices',
+  'slider',
+  'leadership',
+  'committee',
+  'members',
+  'archive',
+  'deceased',
+  'primary',
+  'spotlight',
+  'gallery'
+]
 
 export default function Homepage({ pageSettings }) {
   const apiBase = API_BASE
   const categoryRef = useRef(null)
   const mediaSliderRef = useRef(null)
+  const homeLoadedKeysRef = useRef(new Set())
   const [canScrollPrev, setCanScrollPrev] = useState(false)
   const [canScrollNext, setCanScrollNext] = useState(false)
   const [canMediaScrollPrev, setCanMediaScrollPrev] = useState(false)
@@ -58,40 +76,34 @@ export default function Homepage({ pageSettings }) {
   const [liveNotices, setLiveNotices] = useState([])
   const [liveUpcomingEvents, setLiveUpcomingEvents] = useState([])
   const [liveGalleryItems, setLiveGalleryItems] = useState([])
-  const [liveProgramSlides, setLiveProgramSlides] = useState(programSliderImages)
+  const [liveProgramSlides, setLiveProgramSlides] = useState([])
+  const [isPageLoading, setIsPageLoading] = useState(true)
   const [liveLeadershipProfiles, setLiveLeadershipProfiles] = useState([])
   const [liveCommittee, setLiveCommittee] = useState([])
   const [liveRegisteredMembers, setLiveRegisteredMembers] = useState([])
-  const [liveArchiveItems, setLiveArchiveItems] = useState([
-    {
-      year: '১৯৬৮',
-      title: 'কুমিল্লা বার্তা: স্বাধীনতা-পূর্ব বিশেষ সংখ্যা',
-      type: 'সংবাদপত্র',
-      url: '#'
-    },
-    {
-      year: '১৯৮৪',
-      title: 'প্রেস ক্লাব স্মারক ম্যাগাজিন',
-      type: 'ম্যাগাজিন',
-      url: '#'
-    },
-    {
-      year: '১৯৯৬',
-      title: 'জেলা উন্নয়ন বিশেষ প্রতিবেদন',
-      type: 'প্রকাশনা',
-      url: '#'
-    },
-    {
-      year: '২০০৮',
-      title: 'সাংবাদিকতা নৈতিকতা কর্মশালা নথি',
-      type: 'আর্কাইভ ডকুমেন্ট',
-      url: '#'
-    }
-  ])
-  const [liveDeceasedMembers, setLiveDeceasedMembers] = useState(deceasedMembers)
-  const [livePrimaryMembers, setLivePrimaryMembers] = useState(donorMembers)
+  const [liveArchiveItems, setLiveArchiveItems] = useState([])
+  const [liveDeceasedMembers, setLiveDeceasedMembers] = useState([])
+  const [livePrimaryMembers, setLivePrimaryMembers] = useState([])
   const [liveOrganizationSpotlight, setLiveOrganizationSpotlight] = useState(null)
   const [archiveQuery, setArchiveQuery] = useState('')
+
+  const markHomeSectionLoaded = (key) => {
+    if (homeLoadedKeysRef.current.has(key)) {
+      return
+    }
+    homeLoadedKeysRef.current.add(key)
+    if (homeLoadedKeysRef.current.size >= HOME_BOOTSTRAP_KEYS.length) {
+      setIsPageLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsPageLoading(false)
+    }, 12000)
+    return () => window.clearTimeout(timer)
+  }, [])
+
   const primaryFeaturedNews = liveFeaturedNews[0] || null
   const secondaryFeaturedNews = liveFeaturedNews[1] || null
   const visibleHeroHighlights = liveHeroHighlights.slice(0, 3)
@@ -491,6 +503,8 @@ export default function Homepage({ pageSettings }) {
         setLiveBreakingNews(headlines)
       } catch {
         setLiveBreakingNews([])
+      } finally {
+        markHomeSectionLoaded('breaking')
       }
     }
 
@@ -519,6 +533,8 @@ export default function Homepage({ pageSettings }) {
         setLiveFeaturedNews(normalized)
       } catch {
         setLiveFeaturedNews([])
+      } finally {
+        markHomeSectionLoaded('featured')
       }
     }
 
@@ -563,6 +579,8 @@ export default function Homepage({ pageSettings }) {
         setLiveHeroHighlights(normalized)
       } catch {
         setLiveHeroHighlights([])
+      } finally {
+        markHomeSectionLoaded('highlights')
       }
     }
 
@@ -587,6 +605,8 @@ export default function Homepage({ pageSettings }) {
         setLiveDiscussedTopics(topics)
       } catch {
         setLiveDiscussedTopics([])
+      } finally {
+        markHomeSectionLoaded('topics')
       }
     }
 
@@ -639,6 +659,8 @@ export default function Homepage({ pageSettings }) {
       } catch {
         setLiveNotices([])
         setLiveUpcomingEvents([])
+      } finally {
+        markHomeSectionLoaded('notices')
       }
     }
 
@@ -652,6 +674,7 @@ export default function Homepage({ pageSettings }) {
         const result = await response.json().catch(() => ({}))
 
         if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          setLiveProgramSlides([])
           return
         }
 
@@ -663,12 +686,12 @@ export default function Homepage({ pageSettings }) {
           }))
           .filter((item) => item.title && item.imageUrl)
 
-        if (normalizedSlides.length > 0) {
-          setLiveProgramSlides(normalizedSlides)
-          setActiveProgramSlide(0)
-        }
+        setLiveProgramSlides(normalizedSlides)
+        setActiveProgramSlide(0)
       } catch {
-        // Keep static slides if backend is unavailable.
+        setLiveProgramSlides([])
+      } finally {
+        markHomeSectionLoaded('slider')
       }
     }
 
@@ -702,7 +725,9 @@ export default function Homepage({ pageSettings }) {
 
         setLiveLeadershipProfiles(normalized)
       } catch {
-        // Keep static leadership profiles if backend is unavailable.
+        setLiveLeadershipProfiles([])
+      } finally {
+        markHomeSectionLoaded('leadership')
       }
     }
 
@@ -735,7 +760,9 @@ export default function Homepage({ pageSettings }) {
 
         setLiveCommittee(normalized)
       } catch {
-        // Keep static committee if backend is unavailable.
+        setLiveCommittee([])
+      } finally {
+        markHomeSectionLoaded('committee')
       }
     }
 
@@ -768,7 +795,9 @@ export default function Homepage({ pageSettings }) {
 
         setLiveRegisteredMembers(normalized)
       } catch {
-        // Keep fallback directory if backend is unavailable.
+        setLiveRegisteredMembers([])
+      } finally {
+        markHomeSectionLoaded('members')
       }
     }
 
@@ -795,11 +824,11 @@ export default function Homepage({ pageSettings }) {
           }))
           .filter((item) => item.year && item.title)
 
-        if (normalized.length > 0) {
-          setLiveArchiveItems(normalized)
-        }
+        setLiveArchiveItems(normalized)
       } catch {
-        // Keep static archive items if backend is unavailable.
+        setLiveArchiveItems([])
+      } finally {
+        markHomeSectionLoaded('archive')
       }
     }
 
@@ -826,11 +855,11 @@ export default function Homepage({ pageSettings }) {
           }))
           .filter((item) => item.name && item.role)
 
-        if (normalized.length > 0) {
-          setLiveDeceasedMembers(normalized)
-        }
+        setLiveDeceasedMembers(normalized)
       } catch {
-        // Keep static deceased members if backend is unavailable.
+        setLiveDeceasedMembers([])
+      } finally {
+        markHomeSectionLoaded('deceased')
       }
     }
 
@@ -858,11 +887,11 @@ export default function Homepage({ pageSettings }) {
           }))
           .filter((item) => item.name && item.role)
 
-        if (normalized.length > 0) {
-          setLivePrimaryMembers(normalized)
-        }
+        setLivePrimaryMembers(normalized)
       } catch {
-        // Keep static primary members if backend is unavailable.
+        setLivePrimaryMembers([])
+      } finally {
+        markHomeSectionLoaded('primary')
       }
     }
 
@@ -908,6 +937,8 @@ export default function Homepage({ pageSettings }) {
         })
       } catch {
         setLiveOrganizationSpotlight(null)
+      } finally {
+        markHomeSectionLoaded('spotlight')
       }
     }
 
@@ -978,6 +1009,8 @@ export default function Homepage({ pageSettings }) {
         setLiveGalleryItems(normalizedItems)
       } catch {
         setLiveGalleryItems([])
+      } finally {
+        markHomeSectionLoaded('gallery')
       }
     }
 
@@ -1246,7 +1279,25 @@ export default function Homepage({ pageSettings }) {
   }
 
   return (
-    <main id="home" className="mx-auto w-[min(1200px,94vw)] py-6">
+    <>
+      {isPageLoading ? (
+        <div className="home-boot-overlay" role="status" aria-live="polite" aria-busy="true">
+          <div className="home-boot-card">
+            <div className="home-boot-ring" aria-hidden="true">
+              <span className="home-boot-ring__spin" />
+              <span className="home-boot-ring__dot" />
+            </div>
+            <p className="home-boot-kicker">কুমিল্লা প্রেস ক্লাব</p>
+            <h2 className="home-boot-title">লোড হচ্ছে...</h2>
+            <p className="home-boot-copy">কনটেন্ট প্রস্তুত হচ্ছে, একটু অপেক্ষা করুন।</p>
+            <div className="home-boot-track" aria-hidden="true">
+              <span className="home-boot-track__bar" />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+    <main id="home" className={`mx-auto w-[min(1200px,94vw)] py-6 ${isPageLoading ? 'invisible' : ''}`}>
       <section id="news-notices" className="scroll-mt-24 overflow-hidden rounded-2xl bg-ink text-white">
         <div className="flex items-center">
           <div className="shrink-0 whitespace-nowrap bg-coral px-4 py-3 text-sm font-bold tracking-wide">ব্রেকিং নিউজ</div>
@@ -1269,64 +1320,72 @@ export default function Homepage({ pageSettings }) {
 
       <section className="mt-4 overflow-hidden rounded-3xl border border-ink/10 bg-white p-2 shadow-card dark:border-white/20 dark:bg-white/10 sm:p-3">
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="relative h-[220px] sm:h-[260px] lg:h-[300px]">
-            {liveProgramSlides.map((slide, index) => (
-              <article
-                key={`${slide.title}-${index}`}
-                className={`absolute inset-0 transition-opacity duration-700 ${activeProgramSlide === index ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-                aria-hidden={activeProgramSlide !== index}
-              >
-                <img
-                  src={slide.imageUrl}
-                  alt={slide.title}
-                  className="h-full w-full object-cover"
-                  loading={index === 0 ? 'eager' : 'lazy'}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" aria-hidden="true" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
-                  <p className="inline-flex rounded-full border border-white/35 bg-black/30 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white/95">
-                    প্রোগ্রাম গ্যালারি
-                  </p>
-                  <h3 className="mt-2 max-w-2xl text-base font-bold leading-snug text-white sm:text-xl">{slide.title}</h3>
-                  <p className="mt-1 text-xs font-medium text-white/85 sm:text-sm">{slide.date}</p>
-                </div>
-              </article>
-            ))}
-          </div>
+          {liveProgramSlides.length === 0 ? (
+            <div className="flex h-[220px] items-center justify-center bg-gradient-to-br from-ink/5 via-river/10 to-coral/10 sm:h-[260px] lg:h-[300px] dark:from-white/5 dark:via-sky-900/20 dark:to-orange-900/20">
+              <p className="text-sm font-semibold text-ink/65 dark:text-white/70">কোনো স্লাইড নেই</p>
+            </div>
+          ) : (
+            <>
+              <div className="relative h-[220px] sm:h-[260px] lg:h-[300px]">
+                {liveProgramSlides.map((slide, index) => (
+                  <article
+                    key={`${slide.title}-${index}`}
+                    className={`absolute inset-0 transition-opacity duration-700 ${activeProgramSlide === index ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+                    aria-hidden={activeProgramSlide !== index}
+                  >
+                    <img
+                      src={slide.imageUrl}
+                      alt={slide.title}
+                      className="h-full w-full object-cover"
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" aria-hidden="true" />
+                    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
+                      <p className="inline-flex rounded-full border border-white/35 bg-black/30 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white/95">
+                        প্রোগ্রাম গ্যালারি
+                      </p>
+                      <h3 className="mt-2 max-w-2xl text-base font-bold leading-snug text-white sm:text-xl">{slide.title}</h3>
+                      <p className="mt-1 text-xs font-medium text-white/85 sm:text-sm">{slide.date}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
 
-          <button
-            type="button"
-            onClick={showPrevProgramSlide}
-            className="absolute left-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/45 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55"
-            aria-label="আগের স্লাইড"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
-              <path d="M15 5l-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-
-          <button
-            type="button"
-            onClick={showNextProgramSlide}
-            className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/45 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55"
-            aria-label="পরের স্লাইড"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
-              <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-
-          <div className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-black/35 px-2 py-1 backdrop-blur-sm">
-            {liveProgramSlides.map((slide, index) => (
               <button
-                key={`${slide.title}-dot`}
                 type="button"
-                onClick={() => setActiveProgramSlide(index)}
-                className={`h-2.5 w-2.5 rounded-full transition ${activeProgramSlide === index ? 'bg-white' : 'bg-white/45 hover:bg-white/70'}`}
-                aria-label={`${index + 1} নম্বর স্লাইড দেখুন`}
-              />
-            ))}
-          </div>
+                onClick={showPrevProgramSlide}
+                className="absolute left-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/45 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55"
+                aria-label="আগের স্লাইড"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                  <path d="M15 5l-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                onClick={showNextProgramSlide}
+                className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/45 bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55"
+                aria-label="পরের স্লাইড"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                  <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+
+              <div className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-black/35 px-2 py-1 backdrop-blur-sm">
+                {liveProgramSlides.map((slide, index) => (
+                  <button
+                    key={`${slide.title}-dot`}
+                    type="button"
+                    onClick={() => setActiveProgramSlide(index)}
+                    className={`h-2.5 w-2.5 rounded-full transition ${activeProgramSlide === index ? 'bg-white' : 'bg-white/45 hover:bg-white/70'}`}
+                    aria-label={`${index + 1} নম্বর স্লাইড দেখুন`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -3283,5 +3342,6 @@ export default function Homepage({ pageSettings }) {
         </div>
       )}
     </main>
+    </>
   )
 }
