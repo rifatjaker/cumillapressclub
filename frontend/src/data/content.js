@@ -1,7 +1,7 @@
 export const navItems = [
   { label: 'হোম', icon: 'home', href: '#home' },
   { label: 'আমাদের সম্পর্কে', icon: 'about', href: '#about' },
-  { label: 'নির্বাহী কমিটি', icon: 'committee', href: '#committee' },
+  { label: 'কার্যনির্বাহী পরিষদ', icon: 'committee', href: '#committee' },
   { label: 'সদস্য তালিকা', icon: 'members', href: '#members' },
   { label: 'প্রাথমিক সদস্য', icon: 'members', href: '#donor-members' },
   { label: 'সংবাদ ও নোটিশ', icon: 'news', href: '#news-notices' },
@@ -112,9 +112,9 @@ export const organizationSpotlight = {
   statCaption: 'কুমিল্লা প্রেস ক্লাবের সদস্য',
   imageUrl: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1400&q=80',
   highlights: [
-    'কুমিল্লা প্রেস ক্লাবের ইতিহাস',
-    'কুমিল্লা প্রেস ক্লাবের গঠনতন্ত্র',
-    'কুমিল্লা প্রেস ক্লাবের লক্ষ্য ও উদ্দেশ্য'
+    { label: 'কুমিল্লা প্রেস ক্লাবের ইতিহাস', body: '' },
+    { label: 'কুমিল্লা প্রেস ক্লাবের গঠনতন্ত্র', body: '' },
+    { label: 'কুমিল্লা প্রেস ক্লাবের লক্ষ্য ও উদ্দেশ্য', body: '' }
   ]
 }
 

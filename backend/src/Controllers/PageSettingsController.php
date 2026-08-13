@@ -373,7 +373,7 @@ final class PageSettingsController
             return ['success' => false, 'message' => 'Only jpg, jpeg, png, webp are allowed'];
         }
 
-        $uploadDir = BASE_PATH . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'branding';
+        $uploadDir = PUBLIC_PATH . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'branding';
         if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
             return ['success' => false, 'message' => 'Cannot create upload directory'];
         }
@@ -398,7 +398,7 @@ final class PageSettingsController
             return;
         }
 
-        $fullPath = BASE_PATH . DIRECTORY_SEPARATOR . 'public' . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+        $fullPath = PUBLIC_PATH . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
         if (is_file($fullPath)) {
             @unlink($fullPath);
         }

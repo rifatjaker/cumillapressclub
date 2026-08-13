@@ -88,7 +88,7 @@ function navIconTone(type) {
   return 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300'
 }
 
-export default function Header({ darkMode, onToggleTheme, onAdminOpen, siteName, siteLogo }) {
+export default function Header({ darkMode, onToggleTheme, siteName, siteLogo }) {
   const [isNavFixed, setIsNavFixed] = useState(false)
   const [isLogoZoomOpen, setIsLogoZoomOpen] = useState(false)
   const resolvedSiteLogo = siteLogo || `${import.meta.env.BASE_URL}logo.jpg`
@@ -148,12 +148,6 @@ export default function Header({ darkMode, onToggleTheme, onAdminOpen, siteName,
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={onAdminOpen}
-              className="rounded-full bg-gradient-to-r from-river to-[#005790] px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
-            >
-              অ্যাডমিন লগইন
-            </button>
             <button
               onClick={onToggleTheme}
               className="rounded-full border border-ink/20 bg-white/80 px-4 py-1.5 text-sm font-semibold text-ink transition hover:bg-white dark:border-white/30 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"

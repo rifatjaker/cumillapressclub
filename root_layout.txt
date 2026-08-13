@@ -1,0 +1,107 @@
+OPTION A — cumillapressclub.com (private_api)
+============================================
+
+Target tree
+-----------
+/domains/cumillapressclub.com/
+├── private_api/
+│   ├── .env
+│   ├── src/                 ← backend/src (পুরো ফোল্ডার)
+│   ├── database/            ← optional
+│   └── public/
+│       ├── index.php
+│       ├── .htaccess
+│       └── uploads/
+│
+└── public_html/
+    ├── index.html           ← frontend/dist
+    ├── assets/
+    ├── .htaccess
+    └── api/                 ← private_api/public এর symlink বা কপি
+        ├── index.php
+        ├── .htaccess
+        └── uploads/
+
+
+STEP 1 — private_api তৈরি
+--------------------------
+1. File Manager এ যান: /domains/cumillapressclub.com/
+2. public_html এর বাইরে নতুন ফোল্ডার: private_api
+3. Upload করুন:
+   - backend/.env          → private_api/.env
+   - backend/src/          → private_api/src/
+   - backend/public/       → private_api/public/
+   - (optional) database/  → private_api/database/
+
+
+STEP 2 — public_html/api
+------------------------
+পছন্দ ১ (সবচেয়ে ভালো): symlink
+  public_html/api  →  ../private_api/public
+
+  SSH থাকলে:
+  cd ~/domains/cumillapressclub.com/public_html
+  rm -rf api
+  ln -s ../private_api/public api
+
+  Symlink এর পর অবশ্যই চেক:
+  https://cumillapressclub.com/api/ping.php
+  https://cumillapressclub.com/api/v1/health
+
+  Frontend env (সঠিক):
+  VITE_API_BASE_URL=https://cumillapressclub.com
+  (শেষে /api দিবেন না — নাহলে /api/api/v1 হয়ে যায়)
+
+পছন্দ ২ (symlink না পারলে): কপি
+  private_api/public/*  কপি করুন  →  public_html/api/
+  এবং .env এ PUBLIC_PATH দিন (নিচে)
+
+
+STEP 3 — .env (private_api/.env)
+--------------------------------
+APP_DEBUG=false
+APP_URL=https://cumillapressclub.com/api
+CORS_ALLOWED_ORIGIN=https://cumillapressclub.com
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=cumillap_website_db
+DB_USER=cumillap_website_db
+DB_PASS=YOUR_DB_PASSWORD
+JWT_SECRET=YOUR_LONG_SECRET
+JWT_ACCESS_TTL=900
+JWT_REFRESH_TTL_DAYS=14
+
+# শুধু কপি মোডে লাগবে (symlink এ লাগে না)
+# File Manager এ api ফোল্ডারের Absolute Path কপি করে বসান:
+# PUBLIC_PATH=/home/USER/domains/cumillapressclub.com/public_html/api
+
+
+STEP 4 — PHP
+------------
+cPanel/DirectAdmin → Select PHP Version → 8.1 বা তার উপরে
+
+
+STEP 5 — Test
+-------------
+https://cumillapressclub.com/api/v1/health
+
+Success:
+{"success":true,"message":"API is running",...}
+
+Fail হলে JSON এ looked_in দেখাবে — private_api/src আছে কিনা চেক করুন।
+
+
+NOTES
+-----
+- src ও .env কখনো public_html এ রাখবেন না (Option A তে)
+- api ফোল্ডারে শুধু public এর জিনিস থাকবে
+- Frontend: npm run build → dist/* → public_html/
+
+
+==========================================
+ADMIN login
+Admin link: https://cumillapressclub.com/#admin
+
+Login:
+Email: admin@cumillapressclub.local
+Password: admin1234

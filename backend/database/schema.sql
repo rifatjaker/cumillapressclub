@@ -4,8 +4,26 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(190) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('admin', 'member') NOT NULL DEFAULT 'member',
+    last_login_at DATETIME NULL,
+    last_login_ip VARCHAR(45) NULL,
+    last_login_user_agent VARCHAR(500) NULL,
+    previous_login_at DATETIME NULL,
+    previous_login_ip VARCHAR(45) NULL,
+    previous_login_user_agent VARCHAR(500) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS admin_login_logs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    user_agent VARCHAR(500) NULL,
+    logged_in_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_admin_login_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_admin_login_logs_user (user_id),
+    INDEX idx_admin_login_logs_at (logged_in_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
@@ -31,10 +49,19 @@ CREATE TABLE IF NOT EXISTS members (
     photo_path VARCHAR(500) NULL,
     status ENUM('active', 'inactive', 'expired') NOT NULL DEFAULT 'active',
     expires_at DATE NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    show_in_leadership TINYINT(1) NOT NULL DEFAULT 0,
+    show_in_committee TINYINT(1) NOT NULL DEFAULT 0,
+    leadership_sort_order INT NOT NULL DEFAULT 0,
+    committee_sort_order INT NOT NULL DEFAULT 0,
+    profile_message TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_members_name (name),
-    INDEX idx_members_code (member_code)
+    INDEX idx_members_code (member_code),
+    INDEX idx_members_sort (sort_order, name),
+    INDEX idx_members_leadership (show_in_leadership, leadership_sort_order),
+    INDEX idx_members_committee (show_in_committee, committee_sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS news (
@@ -135,49 +162,6 @@ INSERT INTO page_settings (
     )
 ) ON DUPLICATE KEY UPDATE id = VALUES(id);
 
-CREATE TABLE IF NOT EXISTS leadership_profiles (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(150) NOT NULL,
-    role VARCHAR(120) NOT NULL,
-    message TEXT NULL,
-    phone VARCHAR(40) NULL,
-    email VARCHAR(190) NULL,
-    social VARCHAR(255) NULL,
-    media VARCHAR(180) NULL,
-    photo_tag VARCHAR(80) NULL,
-    photo_path VARCHAR(500) NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    is_active TINYINT(1) NOT NULL DEFAULT 1,
-    created_by BIGINT UNSIGNED NULL,
-    updated_by BIGINT UNSIGNED NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_leadership_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_leadership_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_leadership_active_sort (is_active, sort_order)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS committee_members (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(150) NOT NULL,
-    role VARCHAR(120) NOT NULL,
-    message TEXT NULL,
-    phone VARCHAR(40) NULL,
-    email VARCHAR(190) NULL,
-    social VARCHAR(255) NULL,
-    media VARCHAR(180) NULL,
-    photo_path VARCHAR(500) NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    is_active TINYINT(1) NOT NULL DEFAULT 1,
-    created_by BIGINT UNSIGNED NULL,
-    updated_by BIGINT UNSIGNED NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_committee_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_committee_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_committee_active_sort (is_active, sort_order)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS archive_items (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     year_label VARCHAR(40) NOT NULL,
@@ -268,8 +252,28 @@ CREATE TABLE IF NOT EXISTS club_events (
     INDEX idx_events_starts_at (starts_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS organization_spotlight (
+    id TINYINT UNSIGNED PRIMARY KEY,
+    badge VARCHAR(120) NOT NULL DEFAULT 'কুমিল্লা প্রেস ক্লাব',
+    title VARCHAR(255) NOT NULL DEFAULT 'জনতার আস্থা, জনতার অধিকার',
+    established VARCHAR(40) NOT NULL DEFAULT '১৯৬৮',
+    summary TEXT NULL,
+    stat_number VARCHAR(40) NOT NULL DEFAULT '৮০০+',
+    stat_label VARCHAR(120) NOT NULL DEFAULT 'পেশাদার সাংবাদিক',
+    stat_caption VARCHAR(190) NOT NULL DEFAULT 'কুমিল্লা প্রেস ক্লাবের সদস্য',
+    image_path VARCHAR(500) NULL,
+    image_url VARCHAR(1000) NULL,
+    highlights JSON NULL,
+    updated_by BIGINT UNSIGNED NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_spotlight_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Demo admin user
 -- Password: admin1234
 INSERT INTO users (name, email, password_hash, role)
 VALUES ('System Admin', 'admin@cumillapressclub.local', '$2y$10$2B9rW0fwnH5Q1J4D9i4Rbu2t3Q4mmL0zw5aXIPqAwYM1D4gji36hO', 'admin')
-ON DUPLICATE KEY UPDATE email = VALUES(email);
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  password_hash = VALUES(password_hash),
+  role = VALUES(role);

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
+import { API_BASE } from '../../apiBase.js'
+import { adminFetch } from '../../adminFetch.js'
+import { toastError, toastSuccess } from '../../adminToast.js'
 
 const initialSliderForm = {
   title: '',
@@ -17,13 +19,8 @@ export default function SliderManager({ token }) {
   const [existingImageUrl, setExistingImageUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
 
-  const resetMessages = () => {
-    setMessage('')
-    setError('')
-  }
+  const resetMessages = () => {}
 
   const loadSliderItems = async () => {
     if (!token) {
@@ -34,7 +31,7 @@ export default function SliderManager({ token }) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${API_BASE}/api/v1/admin/slider-items`, {
+      const response = await adminFetch(`/api/v1/admin/slider-items`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -47,7 +44,7 @@ export default function SliderManager({ token }) {
 
       setSliderItems(Array.isArray(result.data) ? result.data : [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Slider list load failed')
+      toastError(err instanceof Error ? err.message : 'Slider list load failed')
     } finally {
       setIsLoading(false)
     }
@@ -62,7 +59,7 @@ export default function SliderManager({ token }) {
     resetMessages()
 
     if (!editingSliderId && !sliderForm.image) {
-      setError('নতুন স্লাইডের জন্য ছবি আপলোড আবশ্যক।')
+      toastError('নতুন স্লাইডের জন্য ছবি আপলোড আবশ্যক।')
       return
     }
 
@@ -79,10 +76,10 @@ export default function SliderManager({ token }) {
       }
 
       const endpoint = editingSliderId
-        ? `${API_BASE}/api/v1/admin/slider-items/${editingSliderId}`
-        : `${API_BASE}/api/v1/admin/slider-items`
+        ? `/api/v1/admin/slider-items/${editingSliderId}`
+        : `/api/v1/admin/slider-items`
 
-      const response = await fetch(endpoint, {
+      const response = await adminFetch(endpoint, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`
@@ -96,13 +93,13 @@ export default function SliderManager({ token }) {
         throw new Error(result.message || 'Slider save failed')
       }
 
-      setMessage(editingSliderId ? 'Slider updated successfully' : 'Slider uploaded successfully')
+      toastSuccess(editingSliderId ? 'Slider updated successfully' : 'Slider uploaded successfully')
       setEditingSliderId(null)
       setExistingImageUrl('')
       setSliderForm(initialSliderForm)
       await loadSliderItems()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Slider save failed')
+      toastError(err instanceof Error ? err.message : 'Slider save failed')
     } finally {
       setIsSubmitting(false)
     }
@@ -130,7 +127,7 @@ export default function SliderManager({ token }) {
     resetMessages()
 
     try {
-      const response = await fetch(`${API_BASE}/api/v1/admin/slider-items/${id}`, {
+      const response = await adminFetch(`/api/v1/admin/slider-items/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`
@@ -142,10 +139,10 @@ export default function SliderManager({ token }) {
         throw new Error(result.message || 'Delete failed')
       }
 
-      setMessage('Slider deleted successfully')
+      toastSuccess('Slider deleted successfully')
       await loadSliderItems()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed')
+      toastError(err instanceof Error ? err.message : 'Delete failed')
     }
   }
 
@@ -162,9 +159,6 @@ export default function SliderManager({ token }) {
         </button>
       </div>
 
-      {message && <p className="mb-3 rounded-lg border border-emerald-300/35 bg-emerald-100/75 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-100">{message}</p>}
-      {error && <p className="mb-3 rounded-lg border border-rose-300/35 bg-rose-100/75 px-3 py-2 text-sm text-rose-700 dark:bg-rose-400/15 dark:text-rose-100">{error}</p>}
-
       <div className="grid gap-5 lg:grid-cols-5">
         <div className="lg:col-span-2">
           <h4 className="mb-2 text-sm font-semibold text-ink/80 dark:text-white/80">{editingSliderId ? 'স্লাইড এডিট' : 'নতুন স্লাইড আপলোড'}</h4>
@@ -174,27 +168,27 @@ export default function SliderManager({ token }) {
               value={sliderForm.title}
               onChange={(event) => setSliderForm((prev) => ({ ...prev, title: event.target.value }))}
               placeholder="Slide title"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               required
               value={sliderForm.slide_date}
               onChange={(event) => setSliderForm((prev) => ({ ...prev, slide_date: event.target.value }))}
               placeholder="Slide date (যেমন: আগস্ট ২০২৬)"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               type="number"
               value={sliderForm.sort_order}
               onChange={(event) => setSliderForm((prev) => ({ ...prev, sort_order: event.target.value }))}
               placeholder="Sort order"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"
               onChange={(event) => setSliderForm((prev) => ({ ...prev, image: event.target.files?.[0] || null }))}
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-river file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field file:mr-3 file:rounded-md file:border-0 file:bg-river file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
             />
             {existingImageUrl && (
               <img src={existingImageUrl} alt="Current slide" className="h-24 w-full rounded-lg object-cover" />

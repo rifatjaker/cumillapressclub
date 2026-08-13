@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
+import { API_BASE } from '../../apiBase.js'
+import { adminFetch } from '../../adminFetch.js'
+import { toastError, toastSuccess } from '../../adminToast.js'
 
 const defaultImportantLinks = [
   { label: 'জেলা প্রশাসন', url: '#' },
@@ -68,7 +70,7 @@ function LinkEditor({ title, links, onChange }) {
                   onChange(next)
                 }}
                 placeholder="লিংকের নাম"
-                className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+                className="neo-field"
               />
               <input
                 value={link.url}
@@ -77,7 +79,7 @@ function LinkEditor({ title, links, onChange }) {
                   onChange(next)
                 }}
                 placeholder="https://..."
-                className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+                className="neo-field"
               />
               <button
                 type="button"
@@ -102,13 +104,8 @@ export default function PageSettingsManager({ token }) {
   const [logoPreview, setLogoPreview] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
 
-  const resetMessages = () => {
-    setMessage('')
-    setError('')
-  }
+  const resetMessages = () => {}
 
   const applySettingsData = (data = {}) => {
     setForm({
@@ -139,7 +136,7 @@ export default function PageSettingsManager({ token }) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${API_BASE}/api/v1/admin/page-settings`, {
+      const response = await adminFetch(`/api/v1/admin/page-settings`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -152,7 +149,7 @@ export default function PageSettingsManager({ token }) {
 
       applySettingsData(result.data || {})
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'পেজ সেটিংস লোডে সমস্যা')
+      toastError(err instanceof Error ? err.message : 'পেজ সেটিংস লোডে সমস্যা')
     } finally {
       setIsLoading(false)
     }
@@ -189,7 +186,7 @@ export default function PageSettingsManager({ token }) {
         formData.append('logo', logoFile)
       }
 
-      const response = await fetch(`${API_BASE}/api/v1/admin/page-settings`, {
+      const response = await adminFetch(`/api/v1/admin/page-settings`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`
@@ -203,36 +200,34 @@ export default function PageSettingsManager({ token }) {
       }
 
       applySettingsData(result.data || {})
-      setMessage('পেজ সেটিংস সেভ হয়েছে')
+      toastSuccess('পেজ সেটিংস সেভ হয়েছে')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'সেভে সমস্যা হয়েছে')
+      toastError(err instanceof Error ? err.message : 'সেভে সমস্যা হয়েছে')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <section className="mt-6 rounded-3xl border border-ink/10 bg-white p-5 shadow-card dark:border-white/20 dark:bg-[#101827]">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h3 className="text-lg font-bold text-ink dark:text-white">পেজ সেটিংস</h3>
-          <p className="text-sm text-ink/70 dark:text-white/70">লোগো, যোগাযোগ, ফুটার লিংক, সোশ্যাল ও ক্রেডিট</p>
+    <section className="mt-6 overflow-hidden rounded-3xl border border-ink/10 bg-white shadow-card dark:border-white/20 dark:bg-[#101827]">
+      <div className="border-b border-ink/10 bg-gradient-to-r from-[#0f4d73] via-[#1a6b8f] to-[#246c8f] px-5 py-4 text-white dark:border-white/10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-white/75">SITE CONFIG</p>
+            <h3 className="mt-1 text-xl font-bold">সাইট সেটিংস</h3>
+            <p className="mt-1 text-sm text-white/85">লোগো, যোগাযোগ, ফুটার লিংক, সোশ্যাল ও ক্রেডিট ম্যানেজ করুন</p>
+          </div>
+          <button
+            type="button"
+            onClick={loadSettings}
+            className="rounded-lg border border-white/30 bg-white/15 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/25"
+          >
+            রিফ্রেশ
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={loadSettings}
-          className="rounded-lg border border-river/30 bg-river/10 px-3 py-1.5 text-xs font-semibold text-river transition hover:bg-river/20"
-        >
-          রিফ্রেশ
-        </button>
       </div>
 
-      {error && (
-        <p className="mb-3 rounded-xl border border-rose-300/35 bg-rose-100/75 px-3 py-2 text-sm text-rose-700 dark:bg-rose-400/15 dark:text-rose-100">{error}</p>
-      )}
-      {message && (
-        <p className="mb-3 rounded-xl border border-emerald-300/35 bg-emerald-100/75 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-100">{message}</p>
-      )}
+      <div className="p-5">
 
       {isLoading ? (
         <p className="text-sm text-ink/65 dark:text-white/70">লোড হচ্ছে...</p>
@@ -244,7 +239,7 @@ export default function PageSettingsManager({ token }) {
               required
               value={form.site_name}
               onChange={handleChange('site_name')}
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
           </div>
 
@@ -285,7 +280,7 @@ export default function PageSettingsManager({ token }) {
             <input
               value={form.address}
               onChange={handleChange('address')}
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
           </div>
           <div className="space-y-2">
@@ -293,7 +288,7 @@ export default function PageSettingsManager({ token }) {
             <input
               value={form.phone}
               onChange={handleChange('phone')}
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
           </div>
           <div className="space-y-2">
@@ -302,7 +297,7 @@ export default function PageSettingsManager({ token }) {
               type="email"
               value={form.email}
               onChange={handleChange('email')}
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
           </div>
           <div className="space-y-2 md:col-span-2">
@@ -311,7 +306,7 @@ export default function PageSettingsManager({ token }) {
               value={form.map_embed_url}
               onChange={handleChange('map_embed_url')}
               placeholder="https://www.google.com/maps?q=...&output=embed"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
           </div>
 
@@ -334,7 +329,7 @@ export default function PageSettingsManager({ token }) {
             <input
               value={form.facebook_url}
               onChange={handleChange('facebook_url')}
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
           </div>
           <div className="space-y-2">
@@ -342,7 +337,7 @@ export default function PageSettingsManager({ token }) {
             <input
               value={form.youtube_url}
               onChange={handleChange('youtube_url')}
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
           </div>
           <div className="space-y-2 md:col-span-2">
@@ -350,7 +345,7 @@ export default function PageSettingsManager({ token }) {
             <input
               value={form.twitter_url}
               onChange={handleChange('twitter_url')}
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
           </div>
 
@@ -362,19 +357,19 @@ export default function PageSettingsManager({ token }) {
               value={form.credit_line1}
               onChange={handleChange('credit_line1')}
               placeholder="লাইন ১"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               value={form.credit_line2}
               onChange={handleChange('credit_line2')}
               placeholder="লাইন ২"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               value={form.credit_line3}
               onChange={handleChange('credit_line3')}
               placeholder="লাইন ৩"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
           </div>
 
@@ -384,11 +379,12 @@ export default function PageSettingsManager({ token }) {
               disabled={isSubmitting}
               className="rounded-lg bg-river px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isSubmitting ? 'সেভ হচ্ছে...' : 'পেজ সেটিংস সেভ করুন'}
+              {isSubmitting ? 'সেভ হচ্ছে...' : 'সাইট সেটিংস সেভ করুন'}
             </button>
           </div>
         </form>
       )}
+      </div>
     </section>
   )
 }

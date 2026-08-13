@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
+import { API_BASE } from '../../apiBase.js'
+import { adminFetch } from '../../adminFetch.js'
+import { toastError, toastSuccess } from '../../adminToast.js'
 
 const initialForm = {
   name: '',
@@ -19,13 +21,8 @@ export default function PrimaryMembersManager({ token }) {
   const [existingPhotoUrl, setExistingPhotoUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
 
-  const resetMessages = () => {
-    setMessage('')
-    setError('')
-  }
+  const resetMessages = () => {}
 
   const resetForm = () => {
     setEditingId(null)
@@ -42,7 +39,7 @@ export default function PrimaryMembersManager({ token }) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${API_BASE}/api/v1/admin/primary-members`, {
+      const response = await adminFetch(`/api/v1/admin/primary-members`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -55,7 +52,7 @@ export default function PrimaryMembersManager({ token }) {
 
       setItems(Array.isArray(result.data) ? result.data : [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'লিস্ট লোডে সমস্যা')
+      toastError(err instanceof Error ? err.message : 'লিস্ট লোডে সমস্যা')
     } finally {
       setIsLoading(false)
     }
@@ -103,10 +100,10 @@ export default function PrimaryMembersManager({ token }) {
       }
 
       const url = editingId
-        ? `${API_BASE}/api/v1/admin/primary-members/${editingId}`
-        : `${API_BASE}/api/v1/admin/primary-members`
+        ? `/api/v1/admin/primary-members/${editingId}`
+        : `/api/v1/admin/primary-members`
 
-      const response = await fetch(url, {
+      const response = await adminFetch(url, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`
@@ -119,11 +116,11 @@ export default function PrimaryMembersManager({ token }) {
         throw new Error(result.message || 'সেভ করা যায়নি')
       }
 
-      setMessage(editingId ? 'প্রাথমিক সদস্য আপডেট হয়েছে' : 'নতুন প্রাথমিক সদস্য যোগ হয়েছে')
+      toastSuccess(editingId ? 'প্রাথমিক সদস্য আপডেট হয়েছে' : 'নতুন প্রাথমিক সদস্য যোগ হয়েছে')
       resetForm()
       await loadItems()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'সেভে সমস্যা হয়েছে')
+      toastError(err instanceof Error ? err.message : 'সেভে সমস্যা হয়েছে')
     } finally {
       setIsSubmitting(false)
     }
@@ -137,7 +134,7 @@ export default function PrimaryMembersManager({ token }) {
     resetMessages()
 
     try {
-      const response = await fetch(`${API_BASE}/api/v1/admin/primary-members/${id}`, {
+      const response = await adminFetch(`/api/v1/admin/primary-members/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`
@@ -152,10 +149,10 @@ export default function PrimaryMembersManager({ token }) {
       if (editingId === id) {
         resetForm()
       }
-      setMessage('প্রাথমিক সদস্য মুছে ফেলা হয়েছে')
+      toastSuccess('প্রাথমিক সদস্য মুছে ফেলা হয়েছে')
       await loadItems()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ডিলিটে সমস্যা')
+      toastError(err instanceof Error ? err.message : 'ডিলিটে সমস্যা')
     }
   }
 
@@ -177,13 +174,6 @@ export default function PrimaryMembersManager({ token }) {
         </button>
       </div>
 
-      {error && (
-        <p className="mb-3 rounded-xl border border-rose-300/35 bg-rose-100/75 px-3 py-2 text-sm text-rose-700 dark:bg-rose-400/15 dark:text-rose-100">{error}</p>
-      )}
-      {message && (
-        <p className="mb-3 rounded-xl border border-emerald-300/35 bg-emerald-100/75 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-100">{message}</p>
-      )}
-
       <div className="grid gap-5 lg:grid-cols-5">
         <form className="space-y-2 rounded-2xl border border-ink/10 bg-ink/[0.02] p-4 dark:border-white/15 dark:bg-white/5 lg:col-span-2" onSubmit={handleSubmit}>
           <h4 className="text-sm font-bold text-ink dark:text-white">{editingId ? 'সদস্য এডিট' : 'নতুন সদস্য'}</h4>
@@ -192,20 +182,20 @@ export default function PrimaryMembersManager({ token }) {
             value={form.name}
             onChange={handleChange('name')}
             placeholder="নাম"
-            className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+            className="neo-field"
           />
           <input
             required
             value={form.role}
             onChange={handleChange('role')}
             placeholder="পদবী"
-            className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+            className="neo-field"
           />
           <input
             value={form.tenure}
             onChange={handleChange('tenure')}
             placeholder="সময়কাল (যেমন: ২০২০ - বর্তমান)"
-            className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+            className="neo-field"
           />
           <textarea
             rows={3}
@@ -219,7 +209,7 @@ export default function PrimaryMembersManager({ token }) {
             value={form.sort_order}
             onChange={handleChange('sort_order')}
             placeholder="Sort Order"
-            className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+            className="neo-field"
           />
           <div className="flex items-center gap-3">
             <span className="inline-flex h-16 w-12 overflow-hidden rounded-lg border border-ink/15 bg-white dark:border-white/20">
@@ -233,7 +223,7 @@ export default function PrimaryMembersManager({ token }) {
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(event) => setForm((prev) => ({ ...prev, photo: event.target.files?.[0] || null }))}
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-river file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field file:mr-3 file:rounded-md file:border-0 file:bg-river file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
             />
           </div>
           <label className="inline-flex items-center gap-2 text-sm text-ink/80 dark:text-white/80">

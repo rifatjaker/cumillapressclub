@@ -3,7 +3,7 @@ import AdminDashboard from './components/admin/AdminDashboard'
 import Header from './components/Header'
 import Homepage from './components/Homepage'
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
+import { API_BASE } from './apiBase.js'
 
 const defaultPageSettings = {
   site_name: 'কুমিল্লা প্রেস ক্লাব',
@@ -95,12 +95,15 @@ export default function App() {
     })
   }
 
-  function openAdminView() {
-    window.location.hash = 'admin'
-  }
-
   if (isAdminView) {
-    return <AdminDashboard darkMode={darkMode} onToggleTheme={handleToggleTheme} />
+    return (
+      <AdminDashboard
+        darkMode={darkMode}
+        onToggleTheme={handleToggleTheme}
+        siteName={pageSettings.site_name}
+        siteLogo={pageSettings.logo_url}
+      />
+    )
   }
 
   return (
@@ -108,7 +111,6 @@ export default function App() {
       <Header
         darkMode={darkMode}
         onToggleTheme={handleToggleTheme}
-        onAdminOpen={openAdminView}
         siteName={pageSettings.site_name}
         siteLogo={pageSettings.logo_url}
       />

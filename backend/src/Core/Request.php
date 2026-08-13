@@ -58,6 +58,41 @@ final class Request
         return trim($matches[1]);
     }
 
+    public function clientIp(): string
+    {
+        $candidates = [
+            $this->headers['cf-connecting-ip'] ?? '',
+            $this->headers['true-client-ip'] ?? '',
+            $this->headers['x-real-ip'] ?? '',
+            $this->headers['x-forwarded-for'] ?? '',
+            (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+        ];
+
+        foreach ($candidates as $raw) {
+            $raw = trim((string) $raw);
+            if ($raw === '') {
+                continue;
+            }
+
+            $ip = trim(explode(',', $raw)[0]);
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return $ip;
+            }
+        }
+
+        return 'unknown';
+    }
+
+    public function userAgent(): string
+    {
+        $ua = trim((string) ($this->headers['user-agent'] ?? ($_SERVER['HTTP_USER_AGENT'] ?? '')));
+        if ($ua === '') {
+            return '';
+        }
+
+        return mb_substr($ua, 0, 500);
+    }
+
     private static function getRawHeaders(): array
     {
         if (function_exists('getallheaders')) {

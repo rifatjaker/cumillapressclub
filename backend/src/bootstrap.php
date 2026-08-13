@@ -28,6 +28,19 @@ spl_autoload_register(static function (string $class): void {
 
 Env::load(BASE_PATH . DIRECTORY_SEPARATOR . '.env');
 
+$configuredPublicPath = trim((string) (getenv('PUBLIC_PATH') ?: ''));
+if ($configuredPublicPath !== '') {
+    define('PUBLIC_PATH', rtrim($configuredPublicPath, '/\\'));
+} elseif (
+    is_dir(BASE_PATH . DIRECTORY_SEPARATOR . 'api')
+    && is_file(BASE_PATH . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR . 'index.php')
+) {
+    // Shared hosting Option B: public_html/{src,.env,api}
+    define('PUBLIC_PATH', BASE_PATH . DIRECTORY_SEPARATOR . 'api');
+} else {
+    define('PUBLIC_PATH', BASE_PATH . DIRECTORY_SEPARATOR . 'public');
+}
+
 $allowedOrigin = getenv('CORS_ALLOWED_ORIGIN') ?: '*';
 header('Access-Control-Allow-Origin: ' . $allowedOrigin);
 header('Access-Control-Allow-Headers: Content-Type, Authorization');

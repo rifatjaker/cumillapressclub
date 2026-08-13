@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
+import { API_BASE } from '../../apiBase.js'
+import { adminFetch } from '../../adminFetch.js'
+import { toastError, toastSuccess } from '../../adminToast.js'
 
 const initialForm = {
   year_label: '',
@@ -19,13 +21,8 @@ export default function ArchiveManager({ token }) {
   const [existingFileUrl, setExistingFileUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
 
-  const resetMessages = () => {
-    setMessage('')
-    setError('')
-  }
+  const resetMessages = () => {}
 
   const resetForm = () => {
     setEditingId(null)
@@ -42,7 +39,7 @@ export default function ArchiveManager({ token }) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${API_BASE}/api/v1/admin/archive-items`, {
+      const response = await adminFetch(`/api/v1/admin/archive-items`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -55,7 +52,7 @@ export default function ArchiveManager({ token }) {
 
       setItems(Array.isArray(result.data) ? result.data : [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'লিস্ট লোডে সমস্যা')
+      toastError(err instanceof Error ? err.message : 'লিস্ট লোডে সমস্যা')
     } finally {
       setIsLoading(false)
     }
@@ -90,7 +87,7 @@ export default function ArchiveManager({ token }) {
     resetMessages()
 
     if (!editingId && !form.file && !form.link_url.trim()) {
-      setError('লিংক অথবা ফাইল আপলোড দিন।')
+      toastError('লিংক অথবা ফাইল আপলোড দিন।')
       return
     }
 
@@ -109,10 +106,10 @@ export default function ArchiveManager({ token }) {
       }
 
       const url = editingId
-        ? `${API_BASE}/api/v1/admin/archive-items/${editingId}`
-        : `${API_BASE}/api/v1/admin/archive-items`
+        ? `/api/v1/admin/archive-items/${editingId}`
+        : `/api/v1/admin/archive-items`
 
-      const response = await fetch(url, {
+      const response = await adminFetch(url, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`
@@ -125,11 +122,11 @@ export default function ArchiveManager({ token }) {
         throw new Error(result.message || 'সেভ করা যায়নি')
       }
 
-      setMessage(editingId ? 'আর্কাইভ আপডেট হয়েছে' : 'নতুন আর্কাইভ যোগ হয়েছে')
+      toastSuccess(editingId ? 'আর্কাইভ আপডেট হয়েছে' : 'নতুন আর্কাইভ যোগ হয়েছে')
       resetForm()
       await loadItems()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'সেভে সমস্যা হয়েছে')
+      toastError(err instanceof Error ? err.message : 'সেভে সমস্যা হয়েছে')
     } finally {
       setIsSubmitting(false)
     }
@@ -143,7 +140,7 @@ export default function ArchiveManager({ token }) {
     resetMessages()
 
     try {
-      const response = await fetch(`${API_BASE}/api/v1/admin/archive-items/${id}`, {
+      const response = await adminFetch(`/api/v1/admin/archive-items/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`
@@ -158,10 +155,10 @@ export default function ArchiveManager({ token }) {
       if (editingId === id) {
         resetForm()
       }
-      setMessage('আর্কাইভ মুছে ফেলা হয়েছে')
+      toastSuccess('আর্কাইভ মুছে ফেলা হয়েছে')
       await loadItems()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ডিলিটে সমস্যা')
+      toastError(err instanceof Error ? err.message : 'ডিলিটে সমস্যা')
     }
   }
 
@@ -181,13 +178,6 @@ export default function ArchiveManager({ token }) {
         </button>
       </div>
 
-      {error && (
-        <p className="mb-3 rounded-xl border border-rose-300/35 bg-rose-100/75 px-3 py-2 text-sm text-rose-700 dark:bg-rose-400/15 dark:text-rose-100">{error}</p>
-      )}
-      {message && (
-        <p className="mb-3 rounded-xl border border-emerald-300/35 bg-emerald-100/75 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-100">{message}</p>
-      )}
-
       <div className="grid gap-5 lg:grid-cols-5">
         <form className="space-y-2 rounded-2xl border border-ink/10 bg-ink/[0.02] p-4 dark:border-white/15 dark:bg-white/5 lg:col-span-2" onSubmit={handleSubmit}>
           <h4 className="text-sm font-bold text-ink dark:text-white">{editingId ? 'আর্কাইভ এডিট' : 'নতুন আর্কাইভ'}</h4>
@@ -196,40 +186,40 @@ export default function ArchiveManager({ token }) {
             value={form.year_label}
             onChange={handleChange('year_label')}
             placeholder="বছর (যেমন: ১৯৬৮ বা 1968)"
-            className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+            className="neo-field"
           />
           <input
             required
             value={form.title}
             onChange={handleChange('title')}
             placeholder="শিরোনাম"
-            className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+            className="neo-field"
           />
           <input
             required
             value={form.doc_type}
             onChange={handleChange('doc_type')}
             placeholder="টাইপ (সংবাদপত্র / ম্যাগাজিন / প্রকাশনা)"
-            className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+            className="neo-field"
           />
           <input
             value={form.link_url}
             onChange={handleChange('link_url')}
             placeholder="External URL (ঐচ্ছিক)"
-            className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+            className="neo-field"
           />
           <input
             type="number"
             value={form.sort_order}
             onChange={handleChange('sort_order')}
             placeholder="Sort Order"
-            className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+            className="neo-field"
           />
           <input
             type="file"
             accept=".pdf,.doc,.docx,image/jpeg,image/png,image/webp"
             onChange={(event) => setForm((prev) => ({ ...prev, file: event.target.files?.[0] || null }))}
-            className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-river file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white dark:border-white/25 dark:bg-white/10 dark:text-white"
+            className="neo-field file:mr-3 file:rounded-md file:border-0 file:bg-river file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
           />
           {existingFileUrl && !form.file && (
             <a href={existingFileUrl} target="_blank" rel="noreferrer" className="block text-xs font-semibold text-river underline">

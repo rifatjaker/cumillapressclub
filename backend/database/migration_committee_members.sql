@@ -1,18 +1,3 @@
-CREATE TABLE IF NOT EXISTS committee_members (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(150) NOT NULL,
-    role VARCHAR(120) NOT NULL,
-    message TEXT NULL,
-    phone VARCHAR(40) NULL,
-    email VARCHAR(190) NULL,
-    social VARCHAR(255) NULL,
-    media VARCHAR(180) NULL,
-    photo_path VARCHAR(500) NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    is_active TINYINT(1) NOT NULL DEFAULT 1,
-    created_by BIGINT UNSIGNED NULL,
-    updated_by BIGINT UNSIGNED NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_committee_active_sort (is_active, sort_order)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- OBSOLETE: committee_members table removed.
+-- Use members.show_in_committee instead.
+-- See migration_drop_leadership_committee.sql

@@ -19,7 +19,7 @@ final class MemberController
 
         if ($q !== '') {
             $stmt = $pdo->prepare(
-                'SELECT id, member_code, name, media_house, designation, phone, email, photo_path, status, expires_at
+                'SELECT id, member_code, name, media_house, designation, phone, email, photo_path, status, expires_at, sort_order
                  FROM members
                  WHERE status = \'active\'
                    AND (
@@ -28,16 +28,16 @@ final class MemberController
                      OR media_house LIKE :query
                      OR designation LIKE :query
                    )
-                 ORDER BY name ASC
+                 ORDER BY sort_order ASC, name ASC
                  LIMIT 100'
             );
             $stmt->execute(['query' => '%' . $q . '%']);
         } else {
             $stmt = $pdo->query(
-                'SELECT id, member_code, name, media_house, designation, phone, email, photo_path, status, expires_at
+                'SELECT id, member_code, name, media_house, designation, phone, email, photo_path, status, expires_at, sort_order
                  FROM members
                  WHERE status = \'active\'
-                 ORDER BY name ASC
+                 ORDER BY sort_order ASC, name ASC
                  LIMIT 500'
             );
         }
@@ -97,15 +97,67 @@ final class MemberController
         ];
     }
 
+    public function publicLeadershipIndex(Request $request): array
+    {
+        $pdo = Database::connection();
+        $this->ensureSchema($pdo);
+
+        $stmt = $pdo->query(
+            'SELECT id, name, designation AS role, profile_message AS message, phone, email,
+                    media_house AS media, photo_path, leadership_sort_order AS sort_order
+             FROM members
+             WHERE show_in_leadership = 1
+               AND status = \'active\'
+             ORDER BY leadership_sort_order ASC, name ASC, id ASC'
+        );
+
+        $items = array_map(fn(array $item): array => $this->mapSpotlightItem($item, true), $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+
+        return [
+            'data' => [
+                'success' => true,
+                'data' => $items,
+            ],
+            'status' => 200,
+        ];
+    }
+
+    public function publicCommitteeIndex(Request $request): array
+    {
+        $pdo = Database::connection();
+        $this->ensureSchema($pdo);
+
+        $stmt = $pdo->query(
+            'SELECT id, name, designation AS role, profile_message AS message, phone, email,
+                    media_house AS media, photo_path, committee_sort_order AS sort_order
+             FROM members
+             WHERE show_in_committee = 1
+               AND status = \'active\'
+             ORDER BY committee_sort_order ASC, name ASC, id ASC'
+        );
+
+        $items = array_map(fn(array $item): array => $this->mapSpotlightItem($item, false), $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+
+        return [
+            'data' => [
+                'success' => true,
+                'data' => $items,
+            ],
+            'status' => 200,
+        ];
+    }
+
     public function adminIndex(Request $request): array
     {
         $pdo = Database::connection();
         $this->ensureSchema($pdo);
 
         $stmt = $pdo->query(
-            'SELECT id, member_code, name, media_house, designation, phone, email, photo_path, status, expires_at, created_at, updated_at
+            'SELECT id, member_code, name, media_house, designation, phone, email, photo_path, status, expires_at, sort_order,
+                    show_in_leadership, show_in_committee, leadership_sort_order, committee_sort_order, profile_message,
+                    created_at, updated_at
              FROM members
-             ORDER BY id DESC'
+             ORDER BY sort_order ASC, id ASC'
         );
 
         $items = array_map(fn(array $item): array => [
@@ -120,6 +172,12 @@ final class MemberController
             'photo_url' => !empty($item['photo_path']) ? $this->toPublicUrl((string) $item['photo_path']) : null,
             'status' => (string) $item['status'],
             'expires_at' => $item['expires_at'] !== null ? (string) $item['expires_at'] : null,
+            'sort_order' => (int) ($item['sort_order'] ?? 0),
+            'show_in_leadership' => (int) ($item['show_in_leadership'] ?? 0) === 1,
+            'show_in_committee' => (int) ($item['show_in_committee'] ?? 0) === 1,
+            'leadership_sort_order' => (int) ($item['leadership_sort_order'] ?? 0),
+            'committee_sort_order' => (int) ($item['committee_sort_order'] ?? 0),
+            'profile_message' => (string) ($item['profile_message'] ?? ''),
             'created_at' => (string) $item['created_at'],
             'updated_at' => (string) $item['updated_at'],
         ], $stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -165,9 +223,11 @@ final class MemberController
 
         $stmt = $pdo->prepare(
             'INSERT INTO members
-             (member_code, name, media_house, designation, phone, email, photo_path, status, expires_at)
+             (member_code, name, media_house, designation, phone, email, photo_path, status, expires_at, sort_order,
+              show_in_leadership, show_in_committee, leadership_sort_order, committee_sort_order, profile_message)
              VALUES
-             (:member_code, :name, :media_house, :designation, :phone, :email, :photo_path, :status, :expires_at)'
+             (:member_code, :name, :media_house, :designation, :phone, :email, :photo_path, :status, :expires_at, :sort_order,
+              :show_in_leadership, :show_in_committee, :leadership_sort_order, :committee_sort_order, :profile_message)'
         );
         $stmt->execute([
             'member_code' => $payload['member_code'],
@@ -179,6 +239,12 @@ final class MemberController
             'photo_path' => $photoPath,
             'status' => $payload['status'],
             'expires_at' => $payload['expires_at'] !== '' ? $payload['expires_at'] : null,
+            'sort_order' => $payload['sort_order'],
+            'show_in_leadership' => $payload['show_in_leadership'],
+            'show_in_committee' => $payload['show_in_committee'],
+            'leadership_sort_order' => $payload['leadership_sort_order'],
+            'committee_sort_order' => $payload['committee_sort_order'],
+            'profile_message' => $payload['profile_message'] !== '' ? $payload['profile_message'] : null,
         ]);
 
         return [
@@ -253,7 +319,13 @@ final class MemberController
                  email = :email,
                  photo_path = :photo_path,
                  status = :status,
-                 expires_at = :expires_at
+                 expires_at = :expires_at,
+                 sort_order = :sort_order,
+                 show_in_leadership = :show_in_leadership,
+                 show_in_committee = :show_in_committee,
+                 leadership_sort_order = :leadership_sort_order,
+                 committee_sort_order = :committee_sort_order,
+                 profile_message = :profile_message
              WHERE id = :id'
         );
         $stmt->execute([
@@ -267,6 +339,12 @@ final class MemberController
             'photo_path' => $photoPath,
             'status' => $payload['status'],
             'expires_at' => $payload['expires_at'] !== '' ? $payload['expires_at'] : null,
+            'sort_order' => $payload['sort_order'],
+            'show_in_leadership' => $payload['show_in_leadership'],
+            'show_in_committee' => $payload['show_in_committee'],
+            'leadership_sort_order' => $payload['leadership_sort_order'],
+            'committee_sort_order' => $payload['committee_sort_order'],
+            'profile_message' => $payload['profile_message'] !== '' ? $payload['profile_message'] : null,
         ]);
 
         return [
@@ -330,16 +408,58 @@ final class MemberController
             'photoUrl' => !empty($item['photo_path']) ? $this->toPublicUrl((string) $item['photo_path']) : null,
             'status' => (string) $item['status'],
             'expires_at' => $item['expires_at'] !== null ? (string) $item['expires_at'] : null,
+            'sort_order' => (int) ($item['sort_order'] ?? 0),
         ];
     }
 
-    /** @return array{member_code: string, name: string, media_house: string, designation: string, phone: string, email: string, status: string, expires_at: string} */
+    private function mapSpotlightItem(array $item, bool $withPhotoTag): array
+    {
+        $mapped = [
+            'id' => (int) $item['id'],
+            'name' => (string) $item['name'],
+            'role' => (string) $item['role'],
+            'message' => (string) ($item['message'] ?? ''),
+            'phone' => (string) ($item['phone'] ?? ''),
+            'email' => (string) ($item['email'] ?? ''),
+            'social' => '',
+            'media' => (string) ($item['media'] ?? ''),
+            'photoUrl' => !empty($item['photo_path']) ? $this->toPublicUrl((string) $item['photo_path']) : null,
+            'sort_order' => (int) ($item['sort_order'] ?? 0),
+        ];
+
+        if ($withPhotoTag) {
+            $mapped['photoTag'] = $this->initialsFromName((string) ($item['name'] ?? ''));
+        }
+
+        return $mapped;
+    }
+
+    private function initialsFromName(string $name): string
+    {
+        $parts = preg_split('/\s+/u', trim($name)) ?: [];
+        $initials = '';
+        foreach ($parts as $part) {
+            if ($part === '') {
+                continue;
+            }
+            $initials .= mb_strtoupper(mb_substr($part, 0, 1));
+            if (mb_strlen($initials) >= 2) {
+                break;
+            }
+        }
+
+        return $initials !== '' ? $initials : 'CPC';
+    }
+
+    /** @return array{member_code: string, name: string, media_house: string, designation: string, phone: string, email: string, status: string, expires_at: string, sort_order: int, show_in_leadership: int, show_in_committee: int, leadership_sort_order: int, committee_sort_order: int, profile_message: string} */
     private function readFormPayload(): array
     {
         $status = strtolower(trim((string) ($_POST['status'] ?? 'active')));
         if (!in_array($status, ['active', 'inactive', 'expired'], true)) {
             $status = 'active';
         }
+
+        $truthy = static fn($value): bool => in_array(strtolower(trim((string) $value)), ['1', 'true', 'on', 'yes'], true);
 
         return [
             'member_code' => trim((string) ($_POST['member_code'] ?? '')),
@@ -350,6 +470,12 @@ final class MemberController
             'email' => trim((string) ($_POST['email'] ?? '')),
             'status' => $status,
             'expires_at' => trim((string) ($_POST['expires_at'] ?? '')),
+            'sort_order' => (int) ($_POST['sort_order'] ?? 0),
+            'show_in_leadership' => $truthy($_POST['show_in_leadership'] ?? '0') ? 1 : 0,
+            'show_in_committee' => $truthy($_POST['show_in_committee'] ?? '0') ? 1 : 0,
+            'leadership_sort_order' => (int) ($_POST['leadership_sort_order'] ?? 0),
+            'committee_sort_order' => (int) ($_POST['committee_sort_order'] ?? 0),
+            'profile_message' => trim((string) ($_POST['profile_message'] ?? '')),
         ];
     }
 
@@ -429,6 +555,24 @@ final class MemberController
         if (!in_array('photo_path', $columns, true)) {
             $pdo->exec('ALTER TABLE members ADD COLUMN photo_path VARCHAR(500) NULL AFTER email');
         }
+        if (!in_array('sort_order', $columns, true)) {
+            $pdo->exec('ALTER TABLE members ADD COLUMN sort_order INT NOT NULL DEFAULT 0 AFTER expires_at');
+        }
+        if (!in_array('show_in_leadership', $columns, true)) {
+            $pdo->exec('ALTER TABLE members ADD COLUMN show_in_leadership TINYINT(1) NOT NULL DEFAULT 0 AFTER sort_order');
+        }
+        if (!in_array('show_in_committee', $columns, true)) {
+            $pdo->exec('ALTER TABLE members ADD COLUMN show_in_committee TINYINT(1) NOT NULL DEFAULT 0 AFTER show_in_leadership');
+        }
+        if (!in_array('leadership_sort_order', $columns, true)) {
+            $pdo->exec('ALTER TABLE members ADD COLUMN leadership_sort_order INT NOT NULL DEFAULT 0 AFTER show_in_committee');
+        }
+        if (!in_array('committee_sort_order', $columns, true)) {
+            $pdo->exec('ALTER TABLE members ADD COLUMN committee_sort_order INT NOT NULL DEFAULT 0 AFTER leadership_sort_order');
+        }
+        if (!in_array('profile_message', $columns, true)) {
+            $pdo->exec('ALTER TABLE members ADD COLUMN profile_message TEXT NULL AFTER committee_sort_order');
+        }
     }
 
     private function saveUploadedPhoto(array $file): array
@@ -452,7 +596,7 @@ final class MemberController
             return ['success' => false, 'message' => 'Only jpg, jpeg, png, webp are allowed'];
         }
 
-        $uploadDir = BASE_PATH . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'members';
+        $uploadDir = PUBLIC_PATH . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'members';
         if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
             return ['success' => false, 'message' => 'Cannot create upload directory'];
         }
@@ -477,7 +621,7 @@ final class MemberController
             return;
         }
 
-        $fullPath = BASE_PATH . DIRECTORY_SEPARATOR . 'public' . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+        $fullPath = PUBLIC_PATH . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
         if (is_file($fullPath)) {
             @unlink($fullPath);
         }

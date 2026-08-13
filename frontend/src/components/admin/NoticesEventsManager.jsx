@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
+import { API_BASE } from '../../apiBase.js'
+import { adminFetch } from '../../adminFetch.js'
+import { toastError, toastSuccess } from '../../adminToast.js'
 
 const noticeInitial = {
   title: '',
@@ -46,13 +48,7 @@ export default function NoticesEventsManager({ token }) {
   const [eventsLoading, setEventsLoading] = useState(false)
   const [eventSubmitting, setEventSubmitting] = useState(false)
 
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
-
-  const resetMessages = () => {
-    setMessage('')
-    setError('')
-  }
+  const resetMessages = () => {}
 
   const resetNoticeForm = () => {
     setEditingNoticeId(null)
@@ -72,7 +68,7 @@ export default function NoticesEventsManager({ token }) {
 
     setNoticesLoading(true)
     try {
-      const response = await fetch(`${API_BASE}/api/v1/admin/notices`, {
+      const response = await adminFetch(`/api/v1/admin/notices`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       const result = await response.json().catch(() => ({}))
@@ -81,7 +77,7 @@ export default function NoticesEventsManager({ token }) {
       }
       setNotices(Array.isArray(result.data) ? result.data : [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'নোটিশ লোডে সমস্যা')
+      toastError(err instanceof Error ? err.message : 'নোটিশ লোডে সমস্যা')
     } finally {
       setNoticesLoading(false)
     }
@@ -94,7 +90,7 @@ export default function NoticesEventsManager({ token }) {
 
     setEventsLoading(true)
     try {
-      const response = await fetch(`${API_BASE}/api/v1/admin/club-events`, {
+      const response = await adminFetch(`/api/v1/admin/club-events`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       const result = await response.json().catch(() => ({}))
@@ -103,7 +99,7 @@ export default function NoticesEventsManager({ token }) {
       }
       setEvents(Array.isArray(result.data) ? result.data : [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ইভেন্ট লোডে সমস্যা')
+      toastError(err instanceof Error ? err.message : 'ইভেন্ট লোডে সমস্যা')
     } finally {
       setEventsLoading(false)
     }
@@ -120,7 +116,7 @@ export default function NoticesEventsManager({ token }) {
     resetMessages()
 
     if (!editingNoticeId && !noticeForm.file && !noticeForm.link_url.trim()) {
-      setError('PDF ফাইল অথবা লিংক দিন।')
+      toastError('PDF ফাইল অথবা লিংক দিন।')
       return
     }
 
@@ -138,10 +134,10 @@ export default function NoticesEventsManager({ token }) {
       }
 
       const url = editingNoticeId
-        ? `${API_BASE}/api/v1/admin/notices/${editingNoticeId}`
-        : `${API_BASE}/api/v1/admin/notices`
+        ? `/api/v1/admin/notices/${editingNoticeId}`
+        : `/api/v1/admin/notices`
 
-      const response = await fetch(url, {
+      const response = await adminFetch(url, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -151,11 +147,11 @@ export default function NoticesEventsManager({ token }) {
         throw new Error(result.message || 'নোটিশ সেভ করা যায়নি')
       }
 
-      setMessage(editingNoticeId ? 'নোটিশ আপডেট হয়েছে' : 'নতুন নোটিশ যোগ হয়েছে')
+      toastSuccess(editingNoticeId ? 'নোটিশ আপডেট হয়েছে' : 'নতুন নোটিশ যোগ হয়েছে')
       resetNoticeForm()
       await loadNotices()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'নোটিশ সেভে সমস্যা')
+      toastError(err instanceof Error ? err.message : 'নোটিশ সেভে সমস্যা')
     } finally {
       setNoticeSubmitting(false)
     }
@@ -177,10 +173,10 @@ export default function NoticesEventsManager({ token }) {
       formData.append('is_active', eventForm.is_active ? '1' : '0')
 
       const url = editingEventId
-        ? `${API_BASE}/api/v1/admin/club-events/${editingEventId}`
-        : `${API_BASE}/api/v1/admin/club-events`
+        ? `/api/v1/admin/club-events/${editingEventId}`
+        : `/api/v1/admin/club-events`
 
-      const response = await fetch(url, {
+      const response = await adminFetch(url, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -190,11 +186,11 @@ export default function NoticesEventsManager({ token }) {
         throw new Error(result.message || 'ইভেন্ট সেভ করা যায়নি')
       }
 
-      setMessage(editingEventId ? 'ইভেন্ট আপডেট হয়েছে' : 'নতুন ইভেন্ট যোগ হয়েছে')
+      toastSuccess(editingEventId ? 'ইভেন্ট আপডেট হয়েছে' : 'নতুন ইভেন্ট যোগ হয়েছে')
       resetEventForm()
       await loadEvents()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ইভেন্ট সেভে সমস্যা')
+      toastError(err instanceof Error ? err.message : 'ইভেন্ট সেভে সমস্যা')
     } finally {
       setEventSubmitting(false)
     }
@@ -206,7 +202,7 @@ export default function NoticesEventsManager({ token }) {
     }
     resetMessages()
     try {
-      const response = await fetch(`${API_BASE}/api/v1/admin/notices/${id}`, {
+      const response = await adminFetch(`/api/v1/admin/notices/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -217,10 +213,10 @@ export default function NoticesEventsManager({ token }) {
       if (editingNoticeId === id) {
         resetNoticeForm()
       }
-      setMessage('নোটিশ মুছে ফেলা হয়েছে')
+      toastSuccess('নোটিশ মুছে ফেলা হয়েছে')
       await loadNotices()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'নোটিশ ডিলিটে সমস্যা')
+      toastError(err instanceof Error ? err.message : 'নোটিশ ডিলিটে সমস্যা')
     }
   }
 
@@ -230,7 +226,7 @@ export default function NoticesEventsManager({ token }) {
     }
     resetMessages()
     try {
-      const response = await fetch(`${API_BASE}/api/v1/admin/club-events/${id}`, {
+      const response = await adminFetch(`/api/v1/admin/club-events/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -241,10 +237,10 @@ export default function NoticesEventsManager({ token }) {
       if (editingEventId === id) {
         resetEventForm()
       }
-      setMessage('ইভেন্ট মুছে ফেলা হয়েছে')
+      toastSuccess('ইভেন্ট মুছে ফেলা হয়েছে')
       await loadEvents()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ইভেন্ট ডিলিটে সমস্যা')
+      toastError(err instanceof Error ? err.message : 'ইভেন্ট ডিলিটে সমস্যা')
     }
   }
 
@@ -281,13 +277,6 @@ export default function NoticesEventsManager({ token }) {
         </div>
       </div>
 
-      {error && (
-        <p className="mb-3 rounded-xl border border-rose-300/35 bg-rose-100/75 px-3 py-2 text-sm text-rose-700 dark:bg-rose-400/15 dark:text-rose-100">{error}</p>
-      )}
-      {message && (
-        <p className="mb-3 rounded-xl border border-emerald-300/35 bg-emerald-100/75 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-100">{message}</p>
-      )}
-
       {activeTab === 'notices' && (
         <div className="grid gap-5 lg:grid-cols-5">
           <form className="space-y-2 rounded-2xl border border-ink/10 bg-ink/[0.02] p-4 dark:border-white/15 dark:bg-white/5 lg:col-span-2" onSubmit={handleNoticeSubmit}>
@@ -297,39 +286,39 @@ export default function NoticesEventsManager({ token }) {
               value={noticeForm.title}
               onChange={(event) => setNoticeForm((prev) => ({ ...prev, title: event.target.value }))}
               placeholder="শিরোনাম"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               value={noticeForm.date_label}
               onChange={(event) => setNoticeForm((prev) => ({ ...prev, date_label: event.target.value }))}
               placeholder="প্রকাশের তারিখ (যেমন: ০৮ আগস্ট ২০২৬)"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <textarea
               value={noticeForm.details}
               onChange={(event) => setNoticeForm((prev) => ({ ...prev, details: event.target.value }))}
               placeholder="বিস্তারিত (ঐচ্ছিক)"
               rows={3}
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               value={noticeForm.link_url}
               onChange={(event) => setNoticeForm((prev) => ({ ...prev, link_url: event.target.value }))}
               placeholder="External URL (ঐচ্ছিক)"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               type="number"
               value={noticeForm.sort_order}
               onChange={(event) => setNoticeForm((prev) => ({ ...prev, sort_order: event.target.value }))}
               placeholder="Sort Order"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               type="file"
               accept=".pdf,.doc,.docx"
               onChange={(event) => setNoticeForm((prev) => ({ ...prev, file: event.target.files?.[0] || null }))}
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-river file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field file:mr-3 file:rounded-md file:border-0 file:bg-river file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
             />
             {existingFileUrl && !noticeForm.file && (
               <a href={existingFileUrl} target="_blank" rel="noreferrer" className="block text-xs font-semibold text-river underline">
@@ -436,25 +425,25 @@ export default function NoticesEventsManager({ token }) {
               value={eventForm.title}
               onChange={(event) => setEventForm((prev) => ({ ...prev, title: event.target.value }))}
               placeholder="ইভেন্ট শিরোনাম"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               value={eventForm.date_label}
               onChange={(event) => setEventForm((prev) => ({ ...prev, date_label: event.target.value }))}
               placeholder="তারিখ লেবেল (যেমন: ১০ আগস্ট ২০২৬)"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               value={eventForm.time_label}
               onChange={(event) => setEventForm((prev) => ({ ...prev, time_label: event.target.value }))}
               placeholder="সময় (যেমন: বিকাল ৪:০০)"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <input
               value={eventForm.venue}
               onChange={(event) => setEventForm((prev) => ({ ...prev, venue: event.target.value }))}
               placeholder="স্থান"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <label className="block text-xs font-semibold text-ink/70 dark:text-white/70">
               কাউন্টডাউন তারিখ/সময়
@@ -462,7 +451,7 @@ export default function NoticesEventsManager({ token }) {
                 type="datetime-local"
                 value={eventForm.starts_at}
                 onChange={(event) => setEventForm((prev) => ({ ...prev, starts_at: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+                className="mt-1 neo-field"
               />
             </label>
             <input
@@ -470,7 +459,7 @@ export default function NoticesEventsManager({ token }) {
               value={eventForm.sort_order}
               onChange={(event) => setEventForm((prev) => ({ ...prev, sort_order: event.target.value }))}
               placeholder="Sort Order"
-              className="w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm outline-none dark:border-white/25 dark:bg-white/10 dark:text-white"
+              className="neo-field"
             />
             <label className="inline-flex items-center gap-2 text-sm text-ink/80 dark:text-white/80">
               <input

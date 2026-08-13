@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { breakingNews, categories, committee, deceasedMembers, departmentsOverview, donorMembers, featuredNews, galleryItems, heroHighlights, importantLinks, leadershipProfiles, localNewspaperLinks, notices, organizationSpotlight, programSliderImages, upcomingEvents } from '../data/content'
+import { API_BASE } from '../apiBase'
+import { deceasedMembers, departmentsOverview, donorMembers, importantLinks, localNewspaperLinks, programSliderImages } from '../data/content'
 
 export default function Homepage({ pageSettings }) {
-  const apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
+  const apiBase = API_BASE
   const categoryRef = useRef(null)
   const mediaSliderRef = useRef(null)
   const [canScrollPrev, setCanScrollPrev] = useState(false)
@@ -14,6 +15,7 @@ export default function Homepage({ pageSettings }) {
   const [selectedDeceasedMember, setSelectedDeceasedMember] = useState(null)
   const [selectedDonorMember, setSelectedDonorMember] = useState(null)
   const [selectedNotice, setSelectedNotice] = useState(null)
+  const [selectedSpotlightHighlight, setSelectedSpotlightHighlight] = useState(null)
   const [eventCountdown, setEventCountdown] = useState({ days: 0, hours: 0, minutes: 0 })
   const [activeVideo, setActiveVideo] = useState(null)
   const [activePhoto, setActivePhoto] = useState(null)
@@ -49,14 +51,16 @@ export default function Homepage({ pageSettings }) {
   const [complaintSubmitted, setComplaintSubmitted] = useState(false)
   const [complaintError, setComplaintError] = useState('')
   const [isComplaintSubmitting, setIsComplaintSubmitting] = useState(false)
-  const [liveBreakingNews, setLiveBreakingNews] = useState(breakingNews)
-  const [liveFeaturedNews, setLiveFeaturedNews] = useState(featuredNews)
-  const [liveNotices, setLiveNotices] = useState(notices)
-  const [liveUpcomingEvents, setLiveUpcomingEvents] = useState(upcomingEvents)
-  const [liveGalleryItems, setLiveGalleryItems] = useState(galleryItems)
+  const [liveBreakingNews, setLiveBreakingNews] = useState([])
+  const [liveFeaturedNews, setLiveFeaturedNews] = useState([])
+  const [liveHeroHighlights, setLiveHeroHighlights] = useState([])
+  const [liveDiscussedTopics, setLiveDiscussedTopics] = useState([])
+  const [liveNotices, setLiveNotices] = useState([])
+  const [liveUpcomingEvents, setLiveUpcomingEvents] = useState([])
+  const [liveGalleryItems, setLiveGalleryItems] = useState([])
   const [liveProgramSlides, setLiveProgramSlides] = useState(programSliderImages)
-  const [liveLeadershipProfiles, setLiveLeadershipProfiles] = useState(leadershipProfiles)
-  const [liveCommittee, setLiveCommittee] = useState(committee)
+  const [liveLeadershipProfiles, setLiveLeadershipProfiles] = useState([])
+  const [liveCommittee, setLiveCommittee] = useState([])
   const [liveRegisteredMembers, setLiveRegisteredMembers] = useState([])
   const [liveArchiveItems, setLiveArchiveItems] = useState([
     {
@@ -86,11 +90,12 @@ export default function Homepage({ pageSettings }) {
   ])
   const [liveDeceasedMembers, setLiveDeceasedMembers] = useState(deceasedMembers)
   const [livePrimaryMembers, setLivePrimaryMembers] = useState(donorMembers)
+  const [liveOrganizationSpotlight, setLiveOrganizationSpotlight] = useState(null)
   const [archiveQuery, setArchiveQuery] = useState('')
-  const primaryFeaturedNews = liveFeaturedNews[0] || featuredNews[0]
-  const secondaryFeaturedNews = liveFeaturedNews[1] || featuredNews[1] || primaryFeaturedNews
-  const visibleHeroHighlights = heroHighlights.slice(0, 3)
-  const hasMoreHeroHighlights = heroHighlights.length > 3
+  const primaryFeaturedNews = liveFeaturedNews[0] || null
+  const secondaryFeaturedNews = liveFeaturedNews[1] || null
+  const visibleHeroHighlights = liveHeroHighlights.slice(0, 3)
+  const hasMoreHeroHighlights = liveHeroHighlights.length > 3
   const visibleLeadershipProfiles = liveLeadershipProfiles
   const hasMoreLeadershipProfiles = false
   const visibleCommittee = liveCommittee
@@ -285,6 +290,14 @@ export default function Homepage({ pageSettings }) {
     setSelectedNotice(null)
   }
 
+  const openSpotlightHighlightModal = (item) => {
+    setSelectedSpotlightHighlight(item)
+  }
+
+  const closeSpotlightHighlightModal = () => {
+    setSelectedSpotlightHighlight(null)
+  }
+
   const toBanglaDigits = (value) =>
     String(value).replace(/\d/g, (digit) => '০১২৩৪৫৬৭৮৯'[Number(digit)])
 
@@ -418,7 +431,6 @@ export default function Homepage({ pageSettings }) {
     setIsComplaintSubmitting(true)
 
     try {
-      const apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
       const response = await fetch(`${apiBase}/api/v1/complaints`, {
         method: 'POST',
         headers: {
@@ -454,18 +466,31 @@ export default function Homepage({ pageSettings }) {
         const result = await response.json().catch(() => ({}))
 
         if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          setLiveBreakingNews([])
           return
         }
 
         const headlines = result.data
-          .map((item) => (item.title || item.body || '').trim())
-          .filter(Boolean)
+          .map((item) => {
+            const title = (item.title || '').trim()
+            const rawBody = (item.body || '').trim()
+            let url = ''
 
-        if (headlines.length > 0) {
-          setLiveBreakingNews(headlines)
-        }
+            if (rawBody && rawBody !== title) {
+              if (/^https?:\/\//i.test(rawBody)) {
+                url = rawBody
+              } else if (/^www\./i.test(rawBody)) {
+                url = `https://${rawBody}`
+              }
+            }
+
+            return { title, url }
+          })
+          .filter((item) => item.title)
+
+        setLiveBreakingNews(headlines)
       } catch {
-        // Fallback to static headlines if backend is unavailable.
+        setLiveBreakingNews([])
       }
     }
 
@@ -479,6 +504,7 @@ export default function Homepage({ pageSettings }) {
         const result = await response.json().catch(() => ({}))
 
         if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          setLiveFeaturedNews([])
           return
         }
 
@@ -490,15 +516,81 @@ export default function Homepage({ pageSettings }) {
           }))
           .filter((item) => item.title && item.summary)
 
-        if (normalized.length > 0) {
-          setLiveFeaturedNews(normalized)
-        }
+        setLiveFeaturedNews(normalized)
       } catch {
-        // Keep static featured news if backend is unavailable.
+        setLiveFeaturedNews([])
       }
     }
 
     loadFeaturedNews()
+  }, [apiBase])
+
+  useEffect(() => {
+    const parseHighlightBody = (body) => {
+      const lines = String(body || '')
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+
+      const scope = lines[0] || 'কুমিল্লা'
+      const time = lines[1] || ''
+      const tone = lines[2] || (scope === 'সারাদেশ' ? 'national' : 'local')
+
+      return { scope, time, tone }
+    }
+
+    const loadHeroHighlights = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/contents/hero_highlights`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          setLiveHeroHighlights([])
+          return
+        }
+
+        const normalized = result.data
+          .map((item) => {
+            const parsed = parseHighlightBody(item.body)
+            return {
+              title: (item.title || '').trim(),
+              scope: parsed.scope,
+              time: parsed.time,
+              tone: parsed.tone
+            }
+          })
+          .filter((item) => item.title)
+
+        setLiveHeroHighlights(normalized)
+      } catch {
+        setLiveHeroHighlights([])
+      }
+    }
+
+    loadHeroHighlights()
+  }, [apiBase])
+
+  useEffect(() => {
+    const loadDiscussedTopics = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/contents/discussed_topics`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          setLiveDiscussedTopics([])
+          return
+        }
+
+        const topics = result.data
+          .map((item) => (item.title || item.body || '').trim())
+          .filter(Boolean)
+
+        setLiveDiscussedTopics(topics)
+      } catch {
+        setLiveDiscussedTopics([])
+      }
+    }
+
+    loadDiscussedTopics()
   }, [apiBase])
 
   useEffect(() => {
@@ -513,39 +605,40 @@ export default function Homepage({ pageSettings }) {
         const eventsResult = await eventsResponse.json().catch(() => ({}))
 
         if (noticesResponse.ok && noticesResult.success && Array.isArray(noticesResult.data)) {
-          const normalizedNotices = noticesResult.data
-            .map((item) => ({
-              id: item.id,
-              title: String(item.title || '').trim(),
-              date: String(item.date || '').trim(),
-              details: String(item.details || '').trim(),
-              url: item.url || item.fileUrl || item.linkUrl || null
-            }))
-            .filter((item) => item.title)
-
-          if (normalizedNotices.length > 0) {
-            setLiveNotices(normalizedNotices)
-          }
+          setLiveNotices(
+            noticesResult.data
+              .map((item) => ({
+                id: item.id,
+                title: String(item.title || '').trim(),
+                date: String(item.date || '').trim(),
+                details: String(item.details || '').trim(),
+                url: item.url || item.fileUrl || item.linkUrl || null
+              }))
+              .filter((item) => item.title)
+          )
+        } else {
+          setLiveNotices([])
         }
 
         if (eventsResponse.ok && eventsResult.success && Array.isArray(eventsResult.data)) {
-          const normalizedEvents = eventsResult.data
-            .map((item) => ({
-              id: item.id,
-              title: String(item.title || '').trim(),
-              date: String(item.date || '').trim(),
-              time: String(item.time || '').trim(),
-              venue: String(item.venue || '').trim(),
-              startsAt: item.startsAt || null
-            }))
-            .filter((item) => item.title)
-
-          if (normalizedEvents.length > 0) {
-            setLiveUpcomingEvents(normalizedEvents)
-          }
+          setLiveUpcomingEvents(
+            eventsResult.data
+              .map((item) => ({
+                id: item.id,
+                title: String(item.title || '').trim(),
+                date: String(item.date || '').trim(),
+                time: String(item.time || '').trim(),
+                venue: String(item.venue || '').trim(),
+                startsAt: item.startsAt || null
+              }))
+              .filter((item) => item.title)
+          )
+        } else {
+          setLiveUpcomingEvents([])
         }
       } catch {
-        // Keep static notices/events if backend is unavailable.
+        setLiveNotices([])
+        setLiveUpcomingEvents([])
       }
     }
 
@@ -607,9 +700,7 @@ export default function Homepage({ pageSettings }) {
           }))
           .filter((item) => item.name && item.role)
 
-        if (normalized.length > 0) {
-          setLiveLeadershipProfiles(normalized)
-        }
+        setLiveLeadershipProfiles(normalized)
       } catch {
         // Keep static leadership profiles if backend is unavailable.
       }
@@ -642,9 +733,7 @@ export default function Homepage({ pageSettings }) {
           }))
           .filter((item) => item.name && item.role)
 
-        if (normalized.length > 0) {
-          setLiveCommittee(normalized)
-        }
+        setLiveCommittee(normalized)
       } catch {
         // Keep static committee if backend is unavailable.
       }
@@ -781,6 +870,51 @@ export default function Homepage({ pageSettings }) {
   }, [apiBase])
 
   useEffect(() => {
+    const loadOrganizationSpotlight = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/v1/organization-spotlight`)
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success || !result.data || typeof result.data !== 'object') {
+          setLiveOrganizationSpotlight(null)
+          return
+        }
+
+        const data = result.data
+        const highlights = Array.isArray(data.highlights)
+          ? data.highlights
+              .map((item) => {
+                if (typeof item === 'string') {
+                  return { label: item.trim(), body: '' }
+                }
+                return {
+                  label: String(item?.label || '').trim(),
+                  body: String(item?.body || item?.content || item?.information || '').trim()
+                }
+              })
+              .filter((item) => item.label)
+          : []
+
+        setLiveOrganizationSpotlight({
+          badge: String(data.badge || '').trim(),
+          title: String(data.title || '').trim(),
+          established: String(data.established || '').trim(),
+          summary: String(data.summary || '').trim(),
+          statNumber: String(data.statNumber || '').trim(),
+          statLabel: String(data.statLabel || '').trim(),
+          statCaption: String(data.statCaption || '').trim(),
+          imageUrl: data.imageUrl || '',
+          highlights
+        })
+      } catch {
+        setLiveOrganizationSpotlight(null)
+      }
+    }
+
+    loadOrganizationSpotlight()
+  }, [apiBase])
+
+  useEffect(() => {
     const parseGalleryBody = (body) => {
       const rawBody = (body || '').trim()
 
@@ -823,6 +957,7 @@ export default function Homepage({ pageSettings }) {
         const result = await response.json().catch(() => ({}))
 
         if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          setLiveGalleryItems([])
           return
         }
 
@@ -840,11 +975,9 @@ export default function Homepage({ pageSettings }) {
           })
           .filter((item) => item.title && item.imageUrl)
 
-        if (normalizedItems.length > 0) {
-          setLiveGalleryItems(normalizedItems)
-        }
+        setLiveGalleryItems(normalizedItems)
       } catch {
-        // Keep static media items if backend is unavailable.
+        setLiveGalleryItems([])
       }
     }
 
@@ -900,7 +1033,7 @@ export default function Homepage({ pageSettings }) {
       el.removeEventListener('scroll', updateScrollState)
       window.removeEventListener('resize', updateScrollState)
     }
-  }, [])
+  }, [liveDiscussedTopics])
 
   useEffect(() => {
     const el = mediaSliderRef.current
@@ -953,6 +1086,21 @@ export default function Homepage({ pageSettings }) {
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
   }, [selectedNotice])
+
+  useEffect(() => {
+    if (!selectedSpotlightHighlight) {
+      return
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        closeSpotlightHighlightModal()
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [selectedSpotlightHighlight])
 
   useEffect(() => {
     if (!activeVideo) {
@@ -1032,11 +1180,32 @@ export default function Homepage({ pageSettings }) {
   }
 
   const breakingCards = (suffix) =>
-    liveBreakingNews.map((headline, index) => (
-      <a key={`${suffix}-${index}`} href="#news-notices" className="breaking-mini-item">
-        <span className="breaking-mini-item__title">{headline}</span>
-      </a>
-    ))
+    liveBreakingNews.map((item, index) => {
+      const key = `${suffix}-${index}`
+      const title = (
+        <span className="breaking-mini-item__title">{item.title}</span>
+      )
+
+      if (item.url) {
+        return (
+          <a
+            key={key}
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="breaking-mini-item"
+          >
+            {title}
+          </a>
+        )
+      }
+
+      return (
+        <span key={key} className="breaking-mini-item">
+          {title}
+        </span>
+      )
+    })
 
   const renderDepartmentIcon = (type) => {
     if (type === 'chat') {
@@ -1082,14 +1251,18 @@ export default function Homepage({ pageSettings }) {
         <div className="flex items-center">
           <div className="shrink-0 whitespace-nowrap bg-coral px-4 py-3 text-sm font-bold tracking-wide">ব্রেকিং নিউজ</div>
           <div className="breaking-mini group relative w-full px-2 py-2" aria-label="ট্রেন্ডিং ও সর্বশেষ সংবাদ">
-            <div className="breaking-mini__viewport">
-              <div className="breaking-mini__track breaking-mini__track--ticker">
-                <div className="breaking-mini__marquee-set">{breakingCards('a')}</div>
-                <div className="breaking-mini__marquee-set" aria-hidden>
-                  {breakingCards('b')}
+            {liveBreakingNews.length === 0 ? (
+              <p className="px-2 py-1 text-sm text-white/75">কোনো ব্রেকিং নিউজ নেই</p>
+            ) : (
+              <div className="breaking-mini__viewport">
+                <div className="breaking-mini__track breaking-mini__track--ticker">
+                  <div className="breaking-mini__marquee-set">{breakingCards('a')}</div>
+                  <div className="breaking-mini__marquee-set" aria-hidden>
+                    {breakingCards('b')}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
@@ -1175,21 +1348,27 @@ export default function Homepage({ pageSettings }) {
 
           <div className="mt-2 grid gap-4 xl:grid-cols-[1.45fr_1fr]">
             <div className="rounded-2xl border border-[#f4e9d7]/28 bg-[#f4e9d7]/10 p-4 backdrop-blur-sm">
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded-full bg-[#f4e9d7]/16 px-2.5 py-1 font-semibold text-[#fff7ec]">কুমিল্লা</span>
-                <span className="rounded-full bg-[#f4e9d7]/16 px-2.5 py-1 font-semibold text-[#fff7ec]">সারাদেশ</span>
-              </div>
-              <h2 className="mt-3 font-display text-3xl font-bold leading-tight">{primaryFeaturedNews?.title}</h2>
-              <p className="mt-3 text-[#fff2df]">{primaryFeaturedNews?.summary}</p>
-              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[#fff0dd]">
-                <span className="rounded-full border border-[#f4e9d7]/35 px-2.5 py-1">প্রধান শিরোনাম</span>
-                <span className="rounded-full border border-[#f4e9d7]/35 px-2.5 py-1">সর্বশেষ আপডেট</span>
-                <span className="rounded-full border border-[#f4e9d7]/35 px-2.5 py-1">বিশেষ প্রতিবেদন</span>
-              </div>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <button className="rounded-xl bg-coral px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ff4e33]">বিস্তারিত পড়ুন</button>
-                <button className="rounded-xl border border-[#f4e9d7]/35 bg-[#f4e9d7]/10 px-4 py-2 text-sm font-semibold text-[#fff7ec] transition hover:bg-[#f4e9d7]/20">সব শিরোনাম</button>
-              </div>
+              {primaryFeaturedNews ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="rounded-full bg-[#f4e9d7]/16 px-2.5 py-1 font-semibold text-[#fff7ec]">কুমিল্লা</span>
+                    <span className="rounded-full bg-[#f4e9d7]/16 px-2.5 py-1 font-semibold text-[#fff7ec]">সারাদেশ</span>
+                  </div>
+                  <h2 className="mt-3 font-display text-3xl font-bold leading-tight">{primaryFeaturedNews.title}</h2>
+                  <p className="mt-3 text-[#fff2df]">{primaryFeaturedNews.summary}</p>
+                  <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[#fff0dd]">
+                    <span className="rounded-full border border-[#f4e9d7]/35 px-2.5 py-1">প্রধান শিরোনাম</span>
+                    <span className="rounded-full border border-[#f4e9d7]/35 px-2.5 py-1">সর্বশেষ আপডেট</span>
+                    <span className="rounded-full border border-[#f4e9d7]/35 px-2.5 py-1">বিশেষ প্রতিবেদন</span>
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <button className="rounded-xl bg-coral px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ff4e33]">বিস্তারিত পড়ুন</button>
+                    <button className="rounded-xl border border-[#f4e9d7]/35 bg-[#f4e9d7]/10 px-4 py-2 text-sm font-semibold text-[#fff7ec] transition hover:bg-[#f4e9d7]/20">সব শিরোনাম</button>
+                  </div>
+                </>
+              ) : (
+                <p className="py-8 text-center text-sm text-[#fff2df]/85">কোনো ফিচার্ড সংবাদ নেই</p>
+              )}
             </div>
 
             <div className="rounded-2xl border border-[#f4e9d7]/28 bg-[#f4e9d7]/10 p-4 backdrop-blur-sm">
@@ -1198,20 +1377,28 @@ export default function Homepage({ pageSettings }) {
                 <span className="text-xs text-[#f6e6d0]">লাইভ</span>
               </div>
               <div className="space-y-2.5">
-                {visibleHeroHighlights.map((item) => (
-                  <a
-                    key={item.title}
-                    href="#news-notices"
-                    className="block rounded-xl border border-[#f4e9d7]/20 bg-[#f4e9d7]/10 p-3 transition hover:border-[#f4e9d7]/45 hover:bg-[#f4e9d7]/18"
-                  >
-                    <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold">
-                      <span className={item.tone === 'local' ? 'text-[#ffd69f]' : 'text-[#bfe9ff]'}>{item.scope}</span>
-                      <span className="text-[#f6e6d0]/70">•</span>
-                      <span className="text-[#f6e6d0]">{item.time}</span>
-                    </div>
-                    <p className="text-sm font-semibold leading-snug text-[#fff6ea]">{item.title}</p>
-                  </a>
-                ))}
+                {visibleHeroHighlights.length === 0 ? (
+                  <p className="py-4 text-center text-xs text-[#f6e6d0]/85">কোনো হাইলাইট নেই</p>
+                ) : (
+                  visibleHeroHighlights.map((item, index) => (
+                    <a
+                      key={`${item.title}-${index}`}
+                      href="#news-notices"
+                      className="block rounded-xl border border-[#f4e9d7]/20 bg-[#f4e9d7]/10 p-3 transition hover:border-[#f4e9d7]/45 hover:bg-[#f4e9d7]/18"
+                    >
+                      <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold">
+                        <span className={item.tone === 'local' ? 'text-[#ffd69f]' : 'text-[#bfe9ff]'}>{item.scope}</span>
+                        {item.time ? (
+                          <>
+                            <span className="text-[#f6e6d0]/70">•</span>
+                            <span className="text-[#f6e6d0]">{item.time}</span>
+                          </>
+                        ) : null}
+                      </div>
+                      <p className="text-sm font-semibold leading-snug text-[#fff6ea]">{item.title}</p>
+                    </a>
+                  ))
+                )}
               </div>
               {hasMoreHeroHighlights && (
                 <a
@@ -1227,8 +1414,14 @@ export default function Homepage({ pageSettings }) {
 
           <div className="mt-5 rounded-2xl border border-[#f4e9d7]/30 bg-[#f4e9d7]/10 p-4">
             <p className="text-xs font-semibold tracking-wide text-mint">ট্রেন্ডিং এখন</p>
-            <h3 className="mt-1 text-lg font-bold leading-snug">{secondaryFeaturedNews?.title}</h3>
-            <p className="mt-1 text-sm text-[#f8ead6]">{secondaryFeaturedNews?.summary}</p>
+            {secondaryFeaturedNews ? (
+              <>
+                <h3 className="mt-1 text-lg font-bold leading-snug">{secondaryFeaturedNews.title}</h3>
+                <p className="mt-1 text-sm text-[#f8ead6]">{secondaryFeaturedNews.summary}</p>
+              </>
+            ) : (
+              <p className="mt-2 text-sm text-[#f8ead6]/85">কোনো ট্রেন্ডিং সংবাদ নেই</p>
+            )}
           </div>
 
           <div className="topic-strip mt-8" aria-label="আলোচিত বিষয়">
@@ -1238,39 +1431,43 @@ export default function Homepage({ pageSettings }) {
               </svg>
               আলোচিত বিষয়
             </span>
-            <div className="topic-strip__rail">
-              <button
-                type="button"
-                className="topic-strip__nav"
-                onClick={() => scrollCategories('prev')}
-                disabled={!canScrollPrev}
-                aria-label="আগের বিষয়গুলো"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <div ref={categoryRef} className="topic-strip__scroller no-scrollbar">
-                <div className="topic-strip__track">
-                  {categories.map((c) => (
-                    <a key={c} href="#news-notices" className="topic-strip__pill">
-                      {c}
-                    </a>
-                  ))}
+            {liveDiscussedTopics.length === 0 ? (
+              <p className="mt-2 text-xs text-[#f6e6d0]/85">কোনো আলোচিত বিষয় নেই</p>
+            ) : (
+              <div className="topic-strip__rail">
+                <button
+                  type="button"
+                  className="topic-strip__nav"
+                  onClick={() => scrollCategories('prev')}
+                  disabled={!canScrollPrev}
+                  aria-label="আগের বিষয়গুলো"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                <div ref={categoryRef} className="topic-strip__scroller no-scrollbar">
+                  <div className="topic-strip__track">
+                    {liveDiscussedTopics.map((topic) => (
+                      <span key={topic} className="topic-strip__pill">
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  className="topic-strip__nav"
+                  onClick={() => scrollCategories('next')}
+                  disabled={!canScrollNext}
+                  aria-label="পরের বিষয়গুলো"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
               </div>
-              <button
-                type="button"
-                className="topic-strip__nav"
-                onClick={() => scrollCategories('next')}
-                disabled={!canScrollNext}
-                aria-label="পরের বিষয়গুলো"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
+            )}
           </div>
         </article>
 
@@ -1282,45 +1479,51 @@ export default function Homepage({ pageSettings }) {
           </div>
 
           <div className="mt-4 space-y-3">
-            {liveNotices.map((notice, index) => (
-              <div key={notice.id ?? notice.title} className="rounded-xl border border-ink/10 bg-ink/5 p-3 dark:border-white/20 dark:bg-white/5">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-semibold leading-snug text-ink dark:text-white">{notice.title}</p>
-                  <span className="rounded-full bg-river/15 px-2 py-0.5 text-[11px] font-semibold text-river dark:bg-white/15 dark:text-white/90">
-                    #{index + 1}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs font-medium text-ink/65 dark:text-white/70">প্রকাশ: {notice.date || '—'}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {notice.url ? (
-                    <a
-                      href={notice.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 rounded-lg bg-river px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110"
-                    >
-                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                        <path d="M12 3v12" />
-                        <path d="M7 10l5 5 5-5" />
-                        <path d="M5 21h14" />
-                      </svg>
-                      PDF ডাউনলোড
-                    </a>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-ink/20 px-3 py-1.5 text-xs font-semibold text-ink/60 dark:bg-white/10 dark:text-white/60">
-                      PDF নেই
+            {liveNotices.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-ink/15 px-3 py-5 text-center text-sm text-ink/65 dark:border-white/20 dark:text-white/70">
+                কোনো নোটিশ নেই
+              </p>
+            ) : (
+              liveNotices.map((notice, index) => (
+                <div key={notice.id ?? notice.title} className="rounded-xl border border-ink/10 bg-ink/5 p-3 dark:border-white/20 dark:bg-white/5">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-semibold leading-snug text-ink dark:text-white">{notice.title}</p>
+                    <span className="rounded-full bg-river/15 px-2 py-0.5 text-[11px] font-semibold text-river dark:bg-white/15 dark:text-white/90">
+                      #{index + 1}
                     </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => openNoticeModal(notice)}
-                    className="rounded-lg border border-ink/20 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
-                  >
-                    বিস্তারিত
-                  </button>
+                  </div>
+                  <p className="mt-1 text-xs font-medium text-ink/65 dark:text-white/70">প্রকাশ: {notice.date || '—'}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {notice.url ? (
+                      <a
+                        href={notice.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-lg bg-river px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110"
+                      >
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path d="M12 3v12" />
+                          <path d="M7 10l5 5 5-5" />
+                          <path d="M5 21h14" />
+                        </svg>
+                        PDF ডাউনলোড
+                      </a>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-ink/20 px-3 py-1.5 text-xs font-semibold text-ink/60 dark:bg-white/10 dark:text-white/60">
+                        PDF নেই
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => openNoticeModal(notice)}
+                      className="rounded-lg border border-ink/20 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                    >
+                      বিস্তারিত
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           <div className="mt-4 rounded-2xl border border-coral/35 bg-gradient-to-br from-[#fff2e8] to-[#ffe6d3] p-4 dark:border-coral/40 dark:from-[#2a1f24] dark:to-[#3a2624]">
@@ -1345,65 +1548,98 @@ export default function Homepage({ pageSettings }) {
             </div>
 
             <div className="mt-3 space-y-2">
-              {liveUpcomingEvents.map((eventItem) => (
-                <div key={eventItem.id ?? eventItem.title} className="rounded-xl border border-ink/10 bg-white/80 p-2.5 dark:border-white/20 dark:bg-white/5">
-                  <p className="text-sm font-semibold text-ink dark:text-white">{eventItem.title}</p>
-                  <p className="mt-0.5 text-xs text-ink/70 dark:text-white/70">{eventItem.date}{eventItem.time ? ` • ${eventItem.time}` : ''}</p>
-                  {eventItem.venue && <p className="text-xs text-ink/70 dark:text-white/70">স্থান: {eventItem.venue}</p>}
-                </div>
-              ))}
+              {liveUpcomingEvents.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-ink/15 bg-white/60 px-3 py-4 text-center text-xs text-ink/65 dark:border-white/20 dark:bg-white/5 dark:text-white/70">
+                  কোনো ইভেন্ট নেই
+                </p>
+              ) : (
+                liveUpcomingEvents.map((eventItem) => (
+                  <div key={eventItem.id ?? eventItem.title} className="rounded-xl border border-ink/10 bg-white/80 p-2.5 dark:border-white/20 dark:bg-white/5">
+                    <p className="text-sm font-semibold text-ink dark:text-white">{eventItem.title}</p>
+                    <p className="mt-0.5 text-xs text-ink/70 dark:text-white/70">{eventItem.date}{eventItem.time ? ` • ${eventItem.time}` : ''}</p>
+                    {eventItem.venue && <p className="text-xs text-ink/70 dark:text-white/70">স্থান: {eventItem.venue}</p>}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </aside>
       </section>
 
       <section className="mt-6 overflow-hidden rounded-3xl border border-ink/10 bg-gradient-to-br from-white via-[#f8fcff] to-[#eef7ff] p-4 shadow-card dark:border-white/20 dark:from-[#0f1d2c] dark:via-[#122538] dark:to-[#0f2a34] sm:p-6">
-        <div className="grid items-center gap-5 lg:grid-cols-[1fr_1.25fr]">
-          <div className="relative mx-auto w-full max-w-[460px]">
-            <div className="aspect-square overflow-hidden rounded-[2.2rem] border border-ink/10 bg-black shadow-xl dark:border-white/20">
-              <img
-                src={organizationSpotlight.imageUrl}
-                alt="কুমিল্লা প্রেস ক্লাব"
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
+        {!liveOrganizationSpotlight ? (
+          <div className="grid items-center gap-5 lg:grid-cols-[1fr_1.25fr]" aria-busy="true" aria-label="জনতার আস্থা লোড হচ্ছে">
+            <div className="relative mx-auto w-full max-w-[460px]">
+              <div className="aspect-square animate-pulse rounded-[2.2rem] border border-ink/10 bg-ink/10 dark:border-white/15 dark:bg-white/10" />
             </div>
-            <div className="absolute -left-4 top-5 rounded-full border border-white/35 bg-coral px-4 py-3 text-center text-white shadow-lg sm:-left-6 sm:px-5">
-              <p className="text-[11px] font-semibold tracking-wide">প্রতিষ্ঠিত</p>
-              <p className="text-2xl font-bold leading-none">{organizationSpotlight.established}</p>
-            </div>
-            <div className="absolute -bottom-5 right-4 w-[220px] rounded-2xl border border-white/30 bg-[#063d14] p-3 text-white shadow-xl sm:right-6">
-              <p className="text-4xl font-bold leading-none">{organizationSpotlight.statNumber}</p>
-              <p className="mt-1 text-sm font-semibold text-[#d5f8d2]">{organizationSpotlight.statLabel}</p>
-              <p className="text-xs text-[#b9ecb5]">{organizationSpotlight.statCaption}</p>
+            <div className="space-y-3">
+              <div className="h-6 w-40 animate-pulse rounded-full bg-ink/10 dark:bg-white/10" />
+              <div className="h-10 w-[80%] max-w-md animate-pulse rounded-lg bg-ink/10 dark:bg-white/10" />
+              <div className="h-24 w-full animate-pulse rounded-xl bg-ink/10 dark:bg-white/10" />
+              <div className="h-28 w-full animate-pulse rounded-2xl bg-ink/10 dark:bg-white/10" />
             </div>
           </div>
+        ) : (
+          <div className="grid items-center gap-5 lg:grid-cols-[1fr_1.25fr]">
+            <div className="relative mx-auto w-full max-w-[460px]">
+              <div className="aspect-square overflow-hidden rounded-[2.2rem] border border-ink/10 bg-ink/10 shadow-xl dark:border-white/20 dark:bg-white/10">
+                {liveOrganizationSpotlight.imageUrl ? (
+                  <img
+                    src={liveOrganizationSpotlight.imageUrl}
+                    alt="কুমিল্লা প্রেস ক্লাব"
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : null}
+              </div>
+              {liveOrganizationSpotlight.established ? (
+                <div className="absolute -left-4 top-5 rounded-full border border-white/35 bg-coral px-4 py-3 text-center text-white shadow-lg sm:-left-6 sm:px-5">
+                  <p className="text-[11px] font-semibold tracking-wide">প্রতিষ্ঠিত</p>
+                  <p className="text-2xl font-bold leading-none">{liveOrganizationSpotlight.established}</p>
+                </div>
+              ) : null}
+              {(liveOrganizationSpotlight.statNumber || liveOrganizationSpotlight.statLabel) ? (
+                <div className="absolute -bottom-5 right-4 w-[220px] rounded-2xl border border-white/30 bg-[#063d14] p-3 text-white shadow-xl sm:right-6">
+                  <p className="text-4xl font-bold leading-none">{liveOrganizationSpotlight.statNumber}</p>
+                  <p className="mt-1 text-sm font-semibold text-[#d5f8d2]">{liveOrganizationSpotlight.statLabel}</p>
+                  <p className="text-xs text-[#b9ecb5]">{liveOrganizationSpotlight.statCaption}</p>
+                </div>
+              ) : null}
+            </div>
 
-          <div>
-            <p className="inline-flex items-center rounded-full border border-river/25 bg-river/10 px-3 py-1 text-xs font-semibold tracking-wide text-river dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100">
-              {organizationSpotlight.badge}
-            </p>
-            <h2 className="mt-3 text-3xl font-bold leading-tight text-ink dark:text-white sm:text-4xl">
-              {organizationSpotlight.title}
-            </h2>
-            <p className="mt-4 text-sm leading-relaxed text-ink/80 dark:text-white/82 sm:text-base">
-              {organizationSpotlight.summary}
-            </p>
+            <div>
+              {liveOrganizationSpotlight.badge ? (
+                <p className="inline-flex items-center rounded-full border border-river/25 bg-river/10 px-3 py-1 text-xs font-semibold tracking-wide text-river dark:border-sky-200/35 dark:bg-sky-200/10 dark:text-sky-100">
+                  {liveOrganizationSpotlight.badge}
+                </p>
+              ) : null}
+              <h2 className="mt-3 text-3xl font-bold leading-tight text-ink dark:text-white sm:text-4xl">
+                {liveOrganizationSpotlight.title || 'জনতার আস্থা, জনতার অধিকার'}
+              </h2>
+              {liveOrganizationSpotlight.summary ? (
+                <p className="mt-4 text-sm leading-relaxed text-ink/80 dark:text-white/82 sm:text-base">
+                  {liveOrganizationSpotlight.summary}
+                </p>
+              ) : null}
 
-            <div className="mt-4 divide-y divide-ink/12 rounded-2xl border border-ink/10 bg-white/75 dark:divide-white/12 dark:border-white/20 dark:bg-white/5">
-              {organizationSpotlight.highlights.map((item) => (
-                <a
-                  key={item}
-                  href="#about"
-                  className="flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-[#0f5132] transition hover:bg-[#e8f6ee] dark:text-mint dark:hover:bg-white/10"
-                >
-                  <span aria-hidden="true">⊕</span>
-                  <span>{item}</span>
-                </a>
-              ))}
+              {liveOrganizationSpotlight.highlights?.length > 0 ? (
+                <div className="mt-4 divide-y divide-ink/12 rounded-2xl border border-ink/10 bg-white/75 dark:divide-white/12 dark:border-white/20 dark:bg-white/5">
+                  {liveOrganizationSpotlight.highlights.map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => openSpotlightHighlightModal(item)}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-[#0f5132] transition hover:bg-[#e8f6ee] dark:text-mint dark:hover:bg-white/10"
+                    >
+                      <span aria-hidden="true">⊕</span>
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       <section className="relative mt-6 overflow-hidden rounded-3xl border border-emerald-900/20 bg-[#0d3f2f] p-4 text-white shadow-card sm:p-6">
@@ -1453,7 +1689,12 @@ export default function Homepage({ pageSettings }) {
             নেতৃত্বের প্রোফাইল
           </h3>
           <div className="mt-4 space-y-4">
-            {visibleLeadershipProfiles.map((leader) => (
+            {visibleLeadershipProfiles.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-ink/15 bg-ink/[0.02] px-4 py-8 text-center text-sm text-ink/65 dark:border-white/20 dark:bg-white/5 dark:text-white/70">
+                কোনো সদস্য পাওয়া যায়নি
+              </p>
+            ) : (
+              visibleLeadershipProfiles.map((leader) => (
               <article
                 key={leader.name}
                 className="cursor-pointer rounded-2xl border border-ink/10 bg-gradient-to-r from-white to-[#eef7ff] p-4 transition hover:border-river/35 hover:shadow-md dark:border-white/20 dark:from-white/5 dark:to-white/10 dark:hover:border-sky-300/45"
@@ -1520,7 +1761,8 @@ export default function Homepage({ pageSettings }) {
                   <span aria-hidden="true">→</span>
                 </button>
               </article>
-            ))}
+              ))
+            )}
             {hasMoreLeadershipProfiles && (
               <a
                 href="#committee"
@@ -1543,11 +1785,15 @@ export default function Homepage({ pageSettings }) {
                 <path d="M11.5 19c.3-2.3 2.4-4 4.8-4 2.6 0 4.7 1.9 4.7 4" />
               </svg>
             </span>
-            বর্তমান নির্বাহী কমিটি
+            বর্তমান কার্যনির্বাহী পরিষদ
           </h3>
-          <p className="mt-1 text-sm text-ink/65 dark:text-white/70">গ্রিড ভিউতে কমিটির সদস্যদের দ্রুত তথ্য</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {visibleCommittee.map((person) => (
+            {visibleCommittee.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-ink/15 bg-ink/[0.02] px-4 py-8 text-center text-sm text-ink/65 dark:border-white/20 dark:bg-white/5 dark:text-white/70 sm:col-span-2">
+                কোনো সদস্য পাওয়া যায়নি
+              </p>
+            ) : (
+              visibleCommittee.map((person) => (
               <article
                 key={person.id || `${person.name}-${person.role}`}
                 className="flex h-full min-h-[132px] cursor-pointer flex-col rounded-xl border border-ink/10 bg-gradient-to-r from-white to-[#fff3eb] p-3 transition hover:border-coral/35 hover:shadow-md dark:border-white/20 dark:from-white/5 dark:to-white/10 dark:hover:border-orange-200/45"
@@ -1595,7 +1841,8 @@ export default function Homepage({ pageSettings }) {
                   <span aria-hidden="true">→</span>
                 </button>
               </article>
-            ))}
+            ))
+            )}
           </div>
           {hasMoreCommittee && (
             <a
@@ -1667,6 +1914,11 @@ export default function Homepage({ pageSettings }) {
         </div>
 
         <div className="relative mt-5">
+          {liveGalleryItems.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-ink/20 bg-white/50 px-4 py-8 text-center text-sm text-ink/70 dark:border-white/25 dark:bg-white/5 dark:text-white/70">
+              কোনো মিডিয়া আইটেম নেই
+            </p>
+          ) : null}
           <div ref={mediaSliderRef} className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth pb-1 pr-1">
           {liveGalleryItems.map((item, index) => (
             <article
@@ -1925,7 +2177,7 @@ export default function Homepage({ pageSettings }) {
                   <input
                     value={verificationInput}
                     onChange={(event) => setVerificationInput(event.target.value)}
-                    placeholder="উদাহরণ: CPC-M-001"
+                    placeholder="উদাহরণ: CPC-001"
                     className="min-w-0 flex-1 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/70 outline-none"
                   />
                   <button type="submit" className="rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15">
@@ -2568,7 +2820,7 @@ export default function Homepage({ pageSettings }) {
                     {selectedProfileGroup === 'leadership'
                       ? 'নেতৃত্ব'
                       : selectedProfileGroup === 'committee'
-                        ? 'নির্বাহী কমিটি'
+                        ? 'কার্যনির্বাহী পরিষদ'
                         : 'নিবন্ধিত সদস্য'}
                   </p>
                   <h4 className="text-xl font-bold text-ink dark:text-white">{selectedProfile.name}</h4>
@@ -2812,6 +3064,53 @@ export default function Homepage({ pageSettings }) {
                 type="button"
                 onClick={closeNoticeModal}
                 className="rounded-xl border border-ink/20 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-ink/5 dark:border-white/25 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </article>
+        </div>
+      )}
+
+      {selectedSpotlightHighlight && (
+        <div
+          className="fixed inset-0 z-[56] flex items-center justify-center bg-ink/65 p-4 backdrop-blur-[1px]"
+          onClick={closeSpotlightHighlightModal}
+          role="presentation"
+        >
+          <article
+            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-ink/15 bg-white p-5 shadow-2xl dark:border-white/20 dark:bg-[#0f1722]"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={selectedSpotlightHighlight.label}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold tracking-wide text-river dark:text-sky-200">জনতার আস্থা</p>
+                <h4 className="mt-1 text-xl font-bold text-ink dark:text-white">{selectedSpotlightHighlight.label}</h4>
+              </div>
+              <button
+                type="button"
+                onClick={closeSpotlightHighlightModal}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-ink/20 text-ink/70 transition hover:bg-ink/5 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/10"
+                aria-label="বন্ধ করুন"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 whitespace-pre-wrap rounded-2xl border border-ink/10 bg-ink/5 p-4 text-sm leading-relaxed text-ink/85 dark:border-white/15 dark:bg-white/5 dark:text-white/85">
+              {selectedSpotlightHighlight.body?.trim()
+                ? selectedSpotlightHighlight.body
+                : 'এই বিষয়ের বিস্তারিত তথ্য এখনো যোগ করা হয়নি।'}
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={closeSpotlightHighlightModal}
+                className="rounded-xl bg-river px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
               >
                 বন্ধ করুন
               </button>

@@ -1,20 +1,41 @@
-Backend API — done
-Auth (login / refresh / logout / me)
+হয়ে গেছে / Done
+=======================================
+Auth (login / refresh / logout / me / change-password)
+JWT session: token refresh + expired → login redirect
+Admin logout animated overlay
+Admin toast notifications (সব success/error)
 Contents CRUD + public by section
 Slider items CRUD + public list
-News list + admin create
-Members search + verify
+News list + admin create (API)
+Members: search + verify + admin directory CRUD
+Members: Order Serial, Member ID suggest (CPC-M-XXX)
+Members: পদবী dropdown (কার্যনির্বাহী পরিষদ পদবি)
+Members flags → নেতৃত্বের প্রোফাইল + কার্যনির্বাহী পরিষদ (এক এন্ট্রি)
+আলাদা leadership_profiles / committee_members টেবিল বাদ
+Notices + Club Events admin (PDF upload সহ)
+Organization Spotlight (জনতার আস্থা) admin + highlight info modal
+Archive / ই-লাইব্রেরি admin
+Deceased members (প্রয়াত সদস্য) admin
+Primary members (প্রাথমিক সদস্য) admin
+Page / Site settings admin (logo, contact, footer links, social)
+Account security: password change + login status (date/time/IP/history)
+Admin UI polish (neo forms, menu icons, Bangla labels)
 Complaints submit (email via mail())
-=======================================
+Deploy notes / Option A hosting layout
+Breaking news CMS admin + homepage ticker fully from API
+Featured & trending news dedicated admin + homepage from API
+Media gallery dedicated admin + homepage from API
+Removed generic Dynamic Content admin menu
+Hero highlights (প্রধান খবরের হাইলাইট) dedicated admin + homepage from API
+Discussed topics (আলোচিত বিষয়) CMS tags admin + homepage from API
 
-এখনো নেই / static
-Sponsored Banner ম্যানেজমেন্ট
-Leadership / committee / members admin
-Notice PDF upload
-Gallery video/photo proper manager (এখন generic content)
+এখনো নেই / Remaining
+=======================================
+Sponsored Banner ম্যানেজমেন্ট (homepage এখন static)
 Membership / press-release form inbox
-Complaints admin inbox (শুধু email)
-News full CMS UI
-Users / roles management
-Dedicated nav/modules (এক পেজে content + slider)
-সংক্ষেপে: Auth + dynamic text content + program slider চালু। বাকি বেশিরভাগ homepage এখনও content.js থেকে; admin থেকে পুরো সাইট কন্ট্রোল করা যায় না।
+Complaints admin inbox (এখন শুধু email পাঠায়)
+News full CMS UI (পৃথক নিউজ সেকশন/আর্কাইভ — API partial)
+Users / roles management (মাল্টি-ইউজার)
+Departments overview dynamic (এখন content.js)
+সংক্ষেপে: ব্রেকিং / ফিচার্ড / হাইলাইট / আলোচিত বিষয় / গ্যালারি সহ মূল অ্যাডমিন মডিউলগুলো চালু।
+বাকি: ব্যানার, অভিযোগ ইনবক্স, ফুল নিউজ CMS, মাল্টি-ইউজার।

@@ -65,6 +65,11 @@ final class AdminContentController
         $sortOrder = (int) ($request->body['sort_order'] ?? 0);
         $isActive = (int) ((bool) ($request->body['is_active'] ?? true));
 
+        // discussed_topics: title-only label. breaking_news: body stores optional external URL.
+        if ($body === '' && $sectionKey === 'discussed_topics') {
+            $body = $title;
+        }
+
         $validation = $this->validateInput($sectionKey, $title, $body);
         if ($validation !== null) {
             return $validation;
@@ -112,6 +117,10 @@ final class AdminContentController
         $body = trim((string) ($request->body['body'] ?? ''));
         $sortOrder = (int) ($request->body['sort_order'] ?? 0);
         $isActive = (int) ((bool) ($request->body['is_active'] ?? true));
+
+        if ($body === '' && $sectionKey === 'discussed_topics') {
+            $body = $title;
+        }
 
         $validation = $this->validateInput($sectionKey, $title, $body);
         if ($validation !== null) {
@@ -189,7 +198,15 @@ final class AdminContentController
 
     private function validateInput(string $sectionKey, string $title, string $body): ?array
     {
-        if ($sectionKey === '' || $title === '' || $body === '') {
+        if ($sectionKey === '' || $title === '') {
+            return [
+                'data' => ['success' => false, 'message' => 'section_key and title are required'],
+                'status' => 422,
+            ];
+        }
+
+        // Title-only sections: body may be empty and will be filled from title.
+        if ($body === '' && !in_array($sectionKey, ['breaking_news', 'discussed_topics'], true)) {
             return [
                 'data' => ['success' => false, 'message' => 'section_key, title and body are required'],
                 'status' => 422,
